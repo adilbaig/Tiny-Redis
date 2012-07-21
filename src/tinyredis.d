@@ -38,8 +38,6 @@ public :
                     debug { writeln("Request : ", "'"~request~"' (MultiBulk : '", escape(mb) ~ "')"); }
                     
                     auto sent = conn.send(mb);
-                    scope(failure)
-                        throw new ConnectionException("Request failed");
                     if (sent == 0)
                         throw new ConnectionException("Error while sending request");
                         

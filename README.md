@@ -4,11 +4,11 @@ A simple Redis driver in D. It makes working with Redis trivial.
 
 ## Compilation Instructions
 
-	rdmd src/*.d
+	rdmd src/tinyredis.d src/example.d
 
 If you have make installed, run :
 
-	make
+	make example
 	
 This will run the example program.
 
@@ -20,6 +20,10 @@ This will run the example program.
     writeln(redis.send("SADD myset $"));
     writeln(redis.send("SMEMBERS myset"));
     //["adil", "350001939", "$"] 
+
+## Interactive Console
+The integrated interactive console works like redis-cli. To run it, run :
+	make console
 
 ## D Compiler
 Tested only with dmd 2.059. Does not have any other dependencies. 
