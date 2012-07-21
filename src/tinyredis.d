@@ -31,7 +31,7 @@ public :
             }
             
             Response send(string request)
-                in { assert(request.length > 0); }
+                in { assert(request.length > 2); }
                 body 
                 {
                     auto mb = toMultiBulk(request);
@@ -43,8 +43,8 @@ public :
                     if (sent == 0)
                         throw new ConnectionException("Error while sending request");
                         
-                    ubyte[1024] buff;
-                    char[] rez;
+                    byte[1024] buff;
+                    byte[] rez;
                     long len;
                     do{
                         len = conn.receive(buff);
@@ -53,7 +53,7 @@ public :
                     
                     debug { writeln("Response : ", "'" ~ escape(cast(string)rez) ~ "'"); }
                     
-                    return parse(cast(string)rez);
+                    return parse(rez);
                 }
     }
 
@@ -79,7 +79,7 @@ private :
                     return "(Nil)";
                 
                 case ResponseType.Integer : 
-                    return to!(string)(intval);
+                    return "(Integer) "  ~ to!(string)(intval);
                     
                 case ResponseType.Status :
                 case ResponseType.Bulk : 
@@ -94,22 +94,22 @@ private :
         }
     }
 
-    Response parse(string response)
+    Response parse(const(byte[]) response)
         in{ assert(response.length > 0); }
         body
         {
             switch(response[0])
             {
                 case '+' : 
-                    Response r = Response(ResponseType.Status, response[1 .. $]);
+                    Response r = Response(ResponseType.Status, cast(string)response[1 .. $-2]);
                     return r;
                     
                 case '-' :
-                    throw new RedisResponseException(response[1 .. $]);
+                    throw new RedisResponseException(cast(string)response[1 .. $-2]);
 
                 case ':' :
                     Response r = {ResponseType.Integer};
-                    r.intval = to!int(response[1 .. $ - 2]);
+                    r.intval = to!int(cast(char[])response[1 .. $ - 2]);
                     return r;
                 
                 case '$' :
@@ -121,7 +121,7 @@ private :
                         r.intval = -1;
                     }
                     else
-                        r = Response(ResponseType.Bulk, std.algorithm.find(response, CRLF)[2 .. $-2]);
+                        r = Response(ResponseType.Bulk, cast(string)std.algorithm.find(response, CRLF)[2 .. $-2]);
                         
                     return r;
 
@@ -135,31 +135,14 @@ private :
             }
 
         }
-
-    string toMultiBulk(string str)
-    {
-        auto cmds = std.array.split(str);
-        
-        string res = "*" ~ to!string(cmds.length) ~ CRLF;
-        foreach(cmd; cmds)
-            res ~= toBulk(cmd);
-        
-        return res;
-    }
     
-    string toBulk(string str)
-    {
-        auto bytes = cast(ubyte[])str;
-        return "$" ~ to!string(bytes.length) ~ CRLF ~ str ~ CRLF;
-    }
-    
-    string[] parseMultiBulk(string mb)
+    string[] parseMultiBulk(const(byte[]) mb)
     {
         auto l = findSplitAfter(mb, CRLF);
-        uint length = to!uint(l[0][1 .. $-2]);
+        uint length = to!uint(cast(char[])l[0][1 .. $-2]);
         
         //Convert to bytes, because $<number> represents bytes
-        ubyte[] bulks = cast(ubyte[])mb[l[0].length .. $];
+        auto bulks = cast(byte[])mb[l[0].length .. $];
         
         string[] rez;
         for(uint i = 0; i < length; i++)
@@ -178,14 +161,36 @@ private :
             }
             pos += lgth.length + 2;
             
-            uint bytes = to!uint(lgth);
-            rez ~= cast(string)bulks[pos .. pos + bytes];
-            pos += (bytes + 2);
+            int bytes = to!int(lgth);
             
+            if(bytes > -1)
+            {
+                rez ~= cast(string)bulks[pos .. pos + bytes];
+                pos += bytes;
+            }
+            
+            pos += 2;
             bulks = bulks[pos .. $];
         }
         
         return rez;
+    }
+    
+    string toMultiBulk(string str)
+    {
+        auto cmds = std.array.split(str);
+        
+        char[] res = "*" ~ to!(char[])(cmds.length) ~ CRLF;
+        foreach(cmd; cmds)
+            res ~= toBulk(cmd);
+        
+        return cast(string)res;
+    }
+    
+    string toBulk(string str)
+    {
+        auto bytes = cast(byte[])str;
+        return "$" ~ to!string(bytes.length) ~ CRLF ~ str ~ CRLF;
     }
     
     string escape(string str)

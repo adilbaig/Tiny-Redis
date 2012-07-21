@@ -2,7 +2,7 @@ Tiny-Redis
 ==========
 A simple Redis driver in D. It makes working with Redis trivial.
 
-# Compilation Instructions
+## Compilation Instructions
 
 	rdmd src/*.d
 
@@ -12,7 +12,7 @@ If you have make installed, run :
 	
 This will run the example program.
 
-# Usage Example
+## Usage Example
 	auto redis = new Redis();
     
     writeln(redis.send("SADD myset adil"));
@@ -21,10 +21,10 @@ This will run the example program.
     writeln(redis.send("SMEMBERS myset"));
     //["adil", "350001939", "$"] 
 
-# D Compiler
+## D Compiler
 Tested only with dmd 2.059. Does not have any other dependencies. 
 
-# Contributions
+## Contributions
 Please download and play with this project. Open tickets for bugs. To contribute code simply fork this repository and send a pull request.
 Any thoughts on how to improve the code, documentation, performance and anything else is very welcome.
 
