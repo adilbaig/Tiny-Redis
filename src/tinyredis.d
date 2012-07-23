@@ -139,8 +139,7 @@ private :
         auto l = findSplitAfter(mb, CRLF);
         uint length = to!uint(cast(char[])l[0][1 .. $-2]);
         
-        //Convert to bytes, because $<number> represents bytes
-        auto bulks = cast(byte[])mb[l[0].length .. $];
+        auto bulks = mb[l[0].length .. $];
         
         string[] rez;
         for(uint i = 0; i < length; i++)
@@ -213,7 +212,21 @@ private :
 unittest
 {
     assert(toMultiBulk("GET *") == "*2\r\n$3\r\nGET\r\n$1\r\n*\r\n");
+    assert(toBulk("$2") == "$2\r\n$2\r\n");
+ 
+    auto redis = new Redis();
+    auto response = redis.send("LASTSAVE");
+    assert(response.type == ResponseType.Integer);
     
+    writeln(redis.send("SET name adil"));
+    response = redis.send("GET name");
+    assert(response.type == ResponseType.Bulk);
+    assert(response.value == "adil");
+    
+    response = redis.send("GET nonexistentkey");
+    assert(response.type == ResponseType.Nil);
+    
+    writeln(redis.send("DEL myset"));
     writeln(redis.send("SADD myset adil"));
     writeln(redis.send("SADD myset 350001939"));
     writeln(redis.send("SADD myset $3"));

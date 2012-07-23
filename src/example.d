@@ -2,8 +2,15 @@ import tinyredis,
        std.stdio
     ;
 
+/**
+ * Make sure the redis server is running
+ */
 void main() 
 {
+    /**
+     * If your redis server is not its standard host/port, adjust it here :
+        auto redis = new Redis("address", port);
+     */
     auto redis = new Redis();
     writeln(redis.send("LASTSAVE"));
     writeln(redis.send("SET name adil"));
