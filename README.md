@@ -1,6 +1,8 @@
 Tiny-Redis
 ==========
-A simple Redis driver in D. It makes working with Redis trivial.
+Tiny Redis is a simple Redis driver for the D programming language (v2). It makes working with Redis trivial.
+It supports all the basic operations including : strings, sets, sorted sets and lists. The code base young, and features
+like pub/sub and transactions are not supported yet. 
 
 ## Compilation Instructions
 
