@@ -114,10 +114,7 @@ private :
                     Response r;
                     
                     if(response == "$-1"~CRLF)
-                    {
                         r = Response(ResponseType.Nil);
-                        r.intval = -1;
-                    }
                     else
                         r = Response(ResponseType.Bulk, cast(string)std.algorithm.find(response, CRLF)[2 .. $-2]);
                         
