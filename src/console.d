@@ -3,7 +3,7 @@ import tinyredis,
     ;
 
 /**
- * This is simple redis console to demostrate Tiny Redis
+ * This is simple console to demonstrate Tiny Redis
  */
 void main() 
 {

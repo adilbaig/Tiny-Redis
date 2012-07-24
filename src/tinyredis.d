@@ -208,8 +208,8 @@ private :
 
 unittest
 {
-    assert(toMultiBulk("GET *") == "*2\r\n$3\r\nGET\r\n$1\r\n*\r\n");
     assert(toBulk("$2") == "$2\r\n$2\r\n");
+    assert(toMultiBulk("GET *") == "*2\r\n$3\r\nGET\r\n$1\r\n*\r\n");
  
     auto redis = new Redis();
     auto response = redis.send("LASTSAVE");
