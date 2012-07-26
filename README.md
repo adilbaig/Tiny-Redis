@@ -11,7 +11,7 @@ All the basic operations on all data types are supported :
 - sorted sets
 - transactions (Yay!) 
 
-The more esoteric features like Lua scripting and Pub/Sub are have not been tested yet.
+The more esoteric features like Lua scripting and Pub/Sub have not been tested yet.
 
 ## Compilation Instructions
 
