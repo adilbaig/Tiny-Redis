@@ -15,7 +15,7 @@ If you have *make* installed, run :
 This will run the example program.
 
 ## Example
-	auto redis = new Redis();
+	auto redis = new Redis("localhost", 6379);
     
     writeln(redis.send("LASTSAVE"));
     writeln(redis.send("SET name adil"));
@@ -28,7 +28,7 @@ This will run the example program.
     writeln(redis.send("SMEMBERS myset"));
     //["adil", "350001939", "$"] 
 
-If a command is incorrect a *RedisResponseException* is thrown. See [example.d](https://github.com/adilbaig/Tiny-Redis/blob/master/src/example.d) and [console.d](https://github.com/adilbaig/Tiny-Redis/blob/master/src/console.d) for more usage samples. 
+See [example.d](https://github.com/adilbaig/Tiny-Redis/blob/master/src/example.d) and [console.d](https://github.com/adilbaig/Tiny-Redis/blob/master/src/console.d) for more usage samples. 
 
 ## Interactive Console
 The integrated interactive console works like redis-cli. To run it, run :
