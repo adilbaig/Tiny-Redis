@@ -47,7 +47,7 @@ This will run the example program.
      writeln(redis.send("INCR bar")); //QUEUED
      writeln(redis.send("EXEC")); //[(integer) 1, (integer) 1] 
 
-See [example.d](https://github.com/adilbaig/Tiny-Redis/blob/master/src/example.d) and [console.d](https://github.com/adilbaig/Tiny-Redis/blob/master/src/console.d) for more usage samples. 
+See [example.d](https://github.com/adilbaig/Tiny-Redis/blob/master/src/example.d) and [console.d](https://github.com/adilbaig/Tiny-Redis/blob/master/src/console.d) for more usage samples. You may also want to check out the unittests in tinyredis.d 
 
 ## Interactive Console
 The integrated interactive console works like redis-cli. To run it, run :

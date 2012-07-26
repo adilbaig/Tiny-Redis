@@ -13,7 +13,14 @@ void main()
      */
     auto redis = new Redis();
     try{
-        writeln(redis.send("LASTSAVE"));
+        Response r = redis.send("LASTSAVE");
+        assert(r.type == ResponseType.Integer);
+        writeln(r.intval);
+        
+        r = redis.send("GET nonexistentkey");
+        if(r.type == ResponseType.Nil)
+            writeln("Non existent key not found!");
+        
         writeln(redis.send("SET name adil"));
         writeln(redis.send("GET name"));
         
