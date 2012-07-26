@@ -1,8 +1,17 @@
-Tiny-Redis
+Tiny Redis
 ==========
-Tiny Redis is a simple Redis driver for the D programming language (v2). It makes working with Redis trivial.
-It supports all the basic operations on strings, sets, sorted sets and lists. The code base is young, and features
-like pub/sub and transactions are not supported yet. 
+Tiny Redis is a Redis driver for the D programming language (v2). It makes working with Redis trivial.
+
+## Support
+All the basic operations on all data types are supported :
+- strings
+- hashes
+- lists
+- sets
+- sorted sets
+- transactions (Yay!) 
+
+The more esoteric features like Lua scripting and Pub/Sub are have not been tested yet.
 
 ## Compilation Instructions
 
@@ -15,20 +24,30 @@ If you have *make* installed, run :
 This will run the example program.
 
 ## Example
-	auto redis = new Redis();
+	auto redis = new Redis("localhost", 6379);
     
+    //An Int reply
     writeln(redis.send("LASTSAVE"));
+    
+    //Get/Set
     writeln(redis.send("SET name adil"));
     writeln(redis.send("GET name"));
    
+    //Or create a set
     writeln(redis.send("SADD myset adil"));
     writeln(redis.send("SADD myset 350001939"));
     writeln(redis.send("SADD myset $"));
     writeln(redis.send("SADD myset $"));
     writeln(redis.send("SMEMBERS myset"));
-    //["adil", "350001939", "$"] 
+    // Writes : ["adil", "350001939", "$"]
+    
+    //Transactions
+     writeln(redis.send("MULTI")); //OK
+     writeln(redis.send("INCR foo")); //QUEUED
+     writeln(redis.send("INCR bar")); //QUEUED
+     writeln(redis.send("EXEC")); //[(integer) 1, (integer) 1] 
 
-If a command is incorrect a *RedisResponseException* is thrown. See [example.d](https://github.com/adilbaig/Tiny-Redis/blob/master/src/example.d) and [console.d](https://github.com/adilbaig/Tiny-Redis/blob/master/src/console.d) for more usage samples. 
+See [example.d](https://github.com/adilbaig/Tiny-Redis/blob/master/src/example.d) and [console.d](https://github.com/adilbaig/Tiny-Redis/blob/master/src/console.d) for more usage samples. 
 
 ## Interactive Console
 The integrated interactive console works like redis-cli. To run it, run :

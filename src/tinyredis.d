@@ -66,7 +66,7 @@ private :
         union{
             string value;
             int intval;
-            string[] values;
+            Response[] values;
         }
         
         @property string toString()
@@ -84,7 +84,7 @@ private :
                     return value;
                     
                 case ResponseType.MultiBulk :
-                    return "[\"" ~ join(values, "\", \"") ~ "\"]";
+                    return std.conv.text(values);
                     
                 default:
                     return "";
@@ -93,81 +93,92 @@ private :
     }
 
     Response parse(const(byte[]) response)
-        in{ assert(response.length > 0); }
-        body
-        {
-            switch(response[0])
-            {
-                case '+' : 
-                    Response r = Response(ResponseType.Status, cast(string)response[1 .. $-2]);
-                    return r;
-                    
-                case '-' :
-                    throw new RedisResponseException(cast(string)response[1 .. $-2]);
-
-                case ':' :
-                    Response r = {ResponseType.Integer};
-                    r.intval = to!int(cast(char[])response[1 .. $ - 2]);
-                    return r;
-                
-                case '$' :
-                    Response r;
-                    
-                    if(response == "$-1"~CRLF)
-                        r = Response(ResponseType.Nil);
-                    else
-                        r = Response(ResponseType.Bulk, cast(string)std.algorithm.find(response, CRLF)[2 .. $-2]);
-                        
-                    return r;
-
-                case '*' :
-                    Response r = {ResponseType.MultiBulk};
-                    r.values = parseMultiBulk(response);
-                    return r;
-                    
-                default : 
-                    throw new Exception("Cannot understand response!");
-            }
-
-        }
-    
-    string[] parseMultiBulk(const(byte[]) mb)
+    in{ assert(response.length > 0); }
+    body
     {
-        auto l = findSplitAfter(mb, CRLF);
-        uint length = to!uint(cast(char[])l[0][1 .. $-2]);
-        
-        auto bulks = mb[l[0].length .. $];
-        
-        string[] rez;
-        for(uint i = 0; i < length; i++)
+        switch(response[0])
         {
-            bulks = bulks[1 .. $];
-            ulong pos = 0;
-            char[] lgth;
-            
-            foreach(p, byte c; bulks)
-            {
-                if(c == 13) //'\r' 
-                    break;
-                    
-                lgth ~= c;
-                pos = p;
-            }
-            pos += lgth.length + 2;
-            
-            int bytes = to!int(lgth);
-            
-            if(bytes > -1)
-            {
-                rez ~= cast(string)bulks[pos .. pos + bytes];
-                pos += bytes;
-            }
-            
-            pos += 2;
-            bulks = bulks[pos .. $];
+            case '+' :
+            case '-' : 
+            case ':' :
+            case '$' :
+            case '*' :
+                ulong pos; //Not used here
+                return parseResponse(response, pos);
+
+            default : 
+                throw new Exception("Cannot understand response!");
         }
+    }
+    
+    Response parseResponse(const(byte[]) mb, ref ulong pos)
+    {
+        char type = mb[0];
+        Response response;
+        auto bytes = getData(mb[1 .. $]); //This could be an int value (:), a bulk byte length ($), a status message (+) or an error value (-)
+        pos = 1 + bytes.length + 2;
         
-        return rez;
+        switch(type)
+        {
+             case '+' : 
+                response = Response(ResponseType.Status, cast(string)bytes);
+                return response;
+                
+            case '-' :
+                throw new RedisResponseException(cast(string)bytes);
+                
+            case ':' :
+                response.type = ResponseType.Integer;
+                response.intval = to!int(cast(char[])bytes);
+                return response;
+            
+            case '$' :
+                int l = to!int(cast(char[])bytes);
+                if(l == -1)
+                {
+                    response.type = ResponseType.Nil;
+                    pos = 5;
+                    return response;
+                }
+                
+                response.type = ResponseType.Bulk;
+                if(l > 0)
+                    response.value = cast(string)mb[pos .. pos + l];
+                
+                pos += l + 2;
+                return response;
+            
+            case '*' :
+                response.type = ResponseType.MultiBulk;
+                int items = to!int(cast(char[])bytes);
+                
+                ulong cp = 0;
+                auto data = mb[pos .. $];
+                for(uint i = 0; i < items; i++)
+                {
+                    response.values ~= parseResponse(data, cp);
+                    data = data[cp .. $];
+                    pos += cp;
+                }
+                
+                return response;
+            
+            default :
+                throw new Exception("Cannot understand response!");
+        }
+    }
+    
+    byte[] getData(const(byte[]) mb)
+    {
+        byte[] lgth;
+        foreach(p, byte c; mb)
+        {
+            if(c == 13) //'\r' 
+                break;
+                
+            lgth ~= c;
+        }
+        return lgth;
     }
     
     string toMultiBulk(string str)
@@ -210,9 +221,18 @@ unittest
 {
     assert(toBulk("$2") == "$2\r\n$2\r\n");
     assert(toMultiBulk("GET *") == "*2\r\n$3\r\nGET\r\n$1\r\n*\r\n");
+    
+    Response response = parse(cast(byte[])"*4\r\n$3\r\nGET\r\n$1\r\n*\r\n:123\r\n+A Status Message\r\n");
+    assert(response.type == ResponseType.MultiBulk);
+    assert(response.values.length == 4);
+    assert(response.values[0].value == "GET");
+    assert(response.values[1].value == "*");
+    assert(response.values[2].intval == 123);
+    assert(response.values[3].value == "A Status Message");
+    writeln(response);
  
     auto redis = new Redis();
-    auto response = redis.send("LASTSAVE");
+    response = redis.send("LASTSAVE");
     assert(response.type == ResponseType.Integer);
     
     writeln(redis.send("SET name adil"));
