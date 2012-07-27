@@ -45,7 +45,7 @@ To run any of the example programs, or unittests, make sure you have a Redis ser
      writeln(redis.send("MULTI")); //OK
      writeln(redis.send("INCR foo")); //QUEUED
      writeln(redis.send("INCR bar")); //QUEUED
-     writeln(redis.send("EXEC")); //[(integer) 1, (integer) 1] 
+     writeln(redis.send("EXEC")); //[(Integer) 1, (Integer) 1] 
 
 See [example.d](https://github.com/adilbaig/Tiny-Redis/blob/master/src/example.d) and [console.d](https://github.com/adilbaig/Tiny-Redis/blob/master/src/console.d) for more usage samples. You may also want to check out the unittests in [tinyredis.d](https://github.com/adilbaig/Tiny-Redis/blob/master/src/tinyredis.d#L220) 
 

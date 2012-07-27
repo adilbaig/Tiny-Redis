@@ -8,8 +8,7 @@ import tinyredis,
 void main()
 {
     /**
-     * If your redis server is not its standard host/port, adjust it here :
-        auto redis = new Redis("address", port);
+     * If your redis server is not on its standard host/port, adjust it here :
      */
     auto redis = new Redis("localhost", 6379);
     try{
@@ -18,8 +17,7 @@ void main()
         writeln(r.intval);
         
         r = redis.send("GET nonexistentkey");
-        if(r.type == ResponseType.Nil)
-            writeln("Non existent key not found!");
+        writeln(r); // ResponseType.Nil
         
         writeln(redis.send("SET name adil"));
         writeln(redis.send("GET name"));
@@ -28,6 +26,8 @@ void main()
         writeln(redis.send("SADD myset 350001939"));
         writeln(redis.send("SADD myset $"));
         writeln(redis.send("SMEMBERS myset"));
+     
+        writeln(redis.send("AND THIS IS A COMMAND REDIS DOES NOT UNDERSTAND"));
     }catch(RedisResponseException e)
     {
         writeln("(error) ", e.msg);

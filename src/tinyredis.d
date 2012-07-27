@@ -4,9 +4,8 @@ private:
     import std.array     : split, join;
     import std.algorithm : find, findSplitAfter;
     import std.stdio     : writeln;
-    import  std.socket,
-    		std.conv
-    	;
+    import std.stdio     : to, text;
+    import std.socket;
 
 public :
     enum ResponseType : byte 
