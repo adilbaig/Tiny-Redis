@@ -1,5 +1,6 @@
 import tinyredis,
-       std.stdio
+       std.stdio,
+       std.datetime
     ;
 
 /**
@@ -32,4 +33,17 @@ void main()
     {
         writeln("(error) ", e.msg);
     }
+    
+    //Lies, great lies, and benchmarks.
+    uint reqs = 50_000;
+    
+    StopWatch sw;
+    sw.reset();
+    sw.start();
+    for(uint i = 0; i < reqs; i++)
+        redis.send("GET name");
+    sw.stop();
+    
+    auto time = sw.peek().seconds;
+    writeln(reqs/time, " reqs/sec for ", reqs, " requests in ", time, " seconds");
 }

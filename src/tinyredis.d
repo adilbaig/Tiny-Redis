@@ -83,7 +83,7 @@ private :
                     return value;
                     
                 case ResponseType.MultiBulk :
-                    return std.conv.text(values);
+                    return text(values);
                     
                 default:
                     return "";
