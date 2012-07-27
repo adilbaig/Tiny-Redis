@@ -5,13 +5,13 @@ import tinyredis,
 /**
  * Make sure the redis server is running
  */
-void main() 
+void main()
 {
     /**
      * If your redis server is not its standard host/port, adjust it here :
         auto redis = new Redis("address", port);
      */
-    auto redis = new Redis();
+    auto redis = new Redis("localhost", 6379);
     try{
         Response r = redis.send("LASTSAVE");
         assert(r.type == ResponseType.Integer);

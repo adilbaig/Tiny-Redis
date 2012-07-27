@@ -21,7 +21,7 @@ If you have *make* installed, run :
 
 	make example
 	
-This will run the example program.
+To run any of the example programs, or unittests, make sure your have a Redis server running on localhost on port 6379 (this is the default during installation)
 
 ## Example
 	auto redis = new Redis("localhost", 6379);
