@@ -30,8 +30,9 @@ To run any of the example programs, or unittests, make sure you have a Redis ser
     writeln(redis.send("LASTSAVE"));
     
     //Get/Set
-    writeln(redis.send("SET name adil"));
-    writeln(redis.send("GET name"));
+    redis.send("SET name adil");
+    auto r = redis.send("GET name");
+    writeln("My name is ", r.value); //My name is adil
    
     //Or create a set
     writeln(redis.send("SADD myset adil"));
