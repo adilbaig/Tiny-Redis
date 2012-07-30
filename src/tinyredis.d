@@ -29,29 +29,29 @@ public :
                 conn = new TcpSocket(new InternetAddress(host, port));
             }
             
+            ~this()
+            {
+                if(conn.isAlive())
+                    conn.close();
+            }
+            
+            /**
+             * Send a request to redis in the form :
+             * send(["GET", "*"])
+             */
+            Response send(string[] request)
+            {
+                return blockingRequest(conn, request);
+            }
+            
+            /**
+             * Send a request to redis in the form :
+             * send("GET *")
+             */
             Response send(string request)
-                in { assert(request.length > 2); }
-                body 
-                {
-                    auto mb = toMultiBulk(request);
-                    debug { writeln("Request : ", "'"~request~"' (MultiBulk : '", escape(mb) ~ "')"); }
-                    
-                    auto sent = conn.send(mb);
-                    if (sent == 0)
-                        throw new ConnectionException("Error while sending request");
-                        
-                    byte[1024] buff;
-                    byte[] rez;
-                    long len;
-                    do{
-                        len = conn.receive(buff);
-                        rez ~= buff[0 .. len];
-                    }while(len > buff.length);
-                    
-                    debug { writeln("Response : ", "'" ~ escape(cast(string)rez) ~ "'"); }
-                    
-                    return parse(rez);
-                }
+            {
+                return send(request.split()); //UFCS - std.array.split 
+            }
     }
 
 private :
@@ -90,26 +90,48 @@ private :
             }
         }
     }
-
-    Response parse(const(byte[]) response)
-    in{ assert(response.length > 0); }
-    body
-    {
-        switch(response[0])
-        {
-            case '+' :
-            case '-' : 
-            case ':' :
-            case '$' :
-            case '*' :
-                ulong pos; //Not used here
-                return parseResponse(response, pos);
-
-            default : 
-                throw new Exception("Cannot understand response!");
-        }
+    
+    Response blockingRequest(Socket conn, const(string[]) request)
+    in { assert(request.length > 0); }
+    body {
+        auto mb = toMultiBulk(cast(string[])request);
+        debug { writeln("Request : ", "'"~request~"' (MultiBulk : '", escape(mb) ~ "')"); }
+        
+        auto sent = conn.send(mb);
+        if (sent == 0)
+            throw new ConnectionException("Error while sending request");
+            
+        byte[1024] buff;
+        byte[] rez;
+        long len;
+        do{
+            len = conn.receive(buff);
+            rez ~= buff[0 .. len];
+        }while(len > buff.length);
+        
+        debug { writeln("Response : ", "'" ~ escape(cast(string)rez) ~ "'"); }
+        
+        return parse(rez);
     }
     
+    
+    /* ---------- RESPONSE PARSING FUNCTIONS ----------- */
+
+    /**
+     * Parse a response from Redis
+     */
+    Response parse(const(byte[]) response)
+    in { assert(response.length > 0); }
+//    out{ assert(response.length == pos); } //Can i do this?
+    body
+    {
+        ulong pos; //Not used here
+        return parseResponse(response, pos);
+    }
+    
+    /**
+     * Parse a byte stream into a response
+     */
     Response parseResponse(const(byte[]) mb, ref ulong pos)
     {
         char type = mb[0];
@@ -180,10 +202,11 @@ private :
         return lgth;
     }
     
-    string toMultiBulk(string str)
+    
+    /* --------- BULK HANDLING FUNCTIONS ---------- */
+    
+    string toMultiBulk(string[] cmds)
     {
-        auto cmds = std.array.split(str);
-        
         char[] res = "*" ~ to!(char[])(cmds.length) ~ CRLF;
         foreach(cmd; cmds)
             res ~= toBulk(cmd);
@@ -202,6 +225,7 @@ private :
          return std.array.replace(str,"\r\n","\\r\\n");
     }
     
+    
     /* -------- EXCEPTIONS ------------- */
     
     class ParseException : Exception {
@@ -216,10 +240,12 @@ private :
         this(string msg) { super(msg); }
     }
 
+
+
 unittest
 {
     assert(toBulk("$2") == "$2\r\n$2\r\n");
-    assert(toMultiBulk("GET *") == "*2\r\n$3\r\nGET\r\n$1\r\n*\r\n");
+    assert(toMultiBulk(["GET","*"]) == "*2\r\n$3\r\nGET\r\n$1\r\n*\r\n");
     
     Response response = parse(cast(byte[])"*4\r\n$3\r\nGET\r\n$1\r\n*\r\n:123\r\n+A Status Message\r\n");
     assert(response.type == ResponseType.MultiBulk);
