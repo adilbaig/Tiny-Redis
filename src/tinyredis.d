@@ -260,7 +260,7 @@ unittest
     response = redis.send("LASTSAVE");
     assert(response.type == ResponseType.Integer);
     
-    writeln(redis.send("SET name adil"));
+    redis.send(["SET", "name", "adil"]);
     response = redis.send("GET name");
     assert(response.type == ResponseType.Bulk);
     assert(response.value == "adil");
@@ -268,10 +268,10 @@ unittest
     response = redis.send("GET nonexistentkey");
     assert(response.type == ResponseType.Nil);
     
-    writeln(redis.send("DEL myset"));
-    writeln(redis.send("SADD myset adil"));
-    writeln(redis.send("SADD myset 350001939"));
-    writeln(redis.send("SADD myset $3"));
+    redis.send("DEL myset");
+    redis.send("SADD myset adil");
+    redis.send("SADD myset 350001939");
+    redis.send("SADD myset $3");
     
     Response r = redis.send("SMEMBERS myset");
     assert(r.type == ResponseType.MultiBulk);
