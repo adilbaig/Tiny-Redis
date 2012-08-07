@@ -23,7 +23,7 @@ void main()
         r = redis.send("GET name");
         writeln("My name is ", r.value);
         
-        // You can build an array of commands using the send(string[]) form
+        // You can build a command using the send(string[]) form
         auto nekeys = ["nonexistentkey", "nonexistentkey2", "nonexistentkey3"];
         foreach(k; nekeys)
             writeln(redis.send(["GET", k])); // ResponseType.Nil
