@@ -36,24 +36,48 @@ public :
             }
             
             /**
-             * Send a request to redis in the form :
-             * send(["GET", "*"])
+             * Send a request using any type that can be converted to a string
+             *
+             * send("SADD", "myset", 1)
+             * send("SADD", "myset", 1.2)
+             * send("SADD", "myset", true)
+             * send("SADD", "myset", "Batman")
+             * send("SADD", "myset", object) //provided toString is implemented
+             * send("GET", "*") == send("GET *")
              */
-            Response send(string[] request)
+            Response send(T...)(string key, T args)
             {
-                return blockingRequest(conn, request);
+                static if(args.length == 0)
+                    return blockingRequest(conn, key);
+                else
+                {    
+                    string query = key;
+                    foreach(a; args)
+                        query ~= " " ~ text(a);
+                            
+                    return blockingRequest(conn, query);
+                }
             }
             
             /**
-             * Send a request to redis in the form :
-             * send("GET *")
+             * Send a request with a parameterized array. Ex:
+             * send("SREM", ["myset", "$3", "$4"]) == send("SREM myset $3 $4")
+             *
              */
-            Response send(string request)
+            Response send(T)(string key, T[] args)
             {
-                return send(request.split()); //UFCS - std.array.split 
+                string query = key;
+                
+                static if(is(T == string))
+                    query ~= " " ~ args.join(" ");
+                else
+                    foreach(a; args)
+                        query ~= " " ~ text(a);
+                        
+                return blockingRequest(conn, query);
             }
     }
-
+    
 private :
 
     const string CRLF = "\r\n";
@@ -91,10 +115,10 @@ private :
         }
     }
     
-    Response blockingRequest(Socket conn, const(string[]) request)
+    Response blockingRequest(Socket conn, string request)
     in { assert(request.length > 0); }
     body {
-        auto mb = toMultiBulk(cast(string[])request);
+        auto mb = toMultiBulk(request);
         debug { writeln("Request : ", "'"~request~"' (MultiBulk : '", escape(mb) ~ "')"); }
         
         auto sent = conn.send(mb);
@@ -205,8 +229,9 @@ private :
     
     /* --------- BULK HANDLING FUNCTIONS ---------- */
     
-    string toMultiBulk(string[] cmds)
+    string toMultiBulk(string command)
     {
+        string[] cmds = command.split();
         char[] res = "*" ~ to!(char[])(cmds.length) ~ CRLF;
         foreach(cmd; cmds)
             res ~= toBulk(cmd);
@@ -245,7 +270,7 @@ private :
 unittest
 {
     assert(toBulk("$2") == "$2\r\n$2\r\n");
-    assert(toMultiBulk(["GET","*"]) == "*2\r\n$3\r\nGET\r\n$1\r\n*\r\n");
+    assert(toMultiBulk("GET *") == "*2\r\n$3\r\nGET\r\n$1\r\n*\r\n");
     
     Response response = parse(cast(byte[])"*4\r\n$3\r\nGET\r\n$1\r\n*\r\n:123\r\n+A Status Message\r\n");
     assert(response.type == ResponseType.MultiBulk);
@@ -254,13 +279,13 @@ unittest
     assert(response.values[1].value == "*");
     assert(response.values[2].intval == 123);
     assert(response.values[3].value == "A Status Message");
-    writeln(response);
+    //writeln(response);
  
     auto redis = new Redis();
     response = redis.send("LASTSAVE");
     assert(response.type == ResponseType.Integer);
     
-    redis.send(["SET", "name", "adil"]);
+    redis.send("SET", "name", "adil");
     response = redis.send("GET name");
     assert(response.type == ResponseType.Bulk);
     assert(response.value == "adil");
@@ -272,8 +297,9 @@ unittest
     redis.send("SADD myset adil");
     redis.send("SADD myset 350001939");
     redis.send("SADD myset $3");
+    redis.send("SADD",["myset","$4"]);
     
     Response r = redis.send("SMEMBERS myset");
     assert(r.type == ResponseType.MultiBulk);
-    assert(r.values.length == 3);
+    assert(r.values.length == 4);
 }

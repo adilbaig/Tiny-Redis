@@ -23,16 +23,15 @@ void main()
         r = redis.send("GET name");
         writeln("My name is ", r.value);
         
-        // You can build a command using the send(string[]) form
-        auto nekeys = ["nonexistentkey", "nonexistentkey2", "nonexistentkey3"];
-        foreach(k; nekeys)
-            writeln(redis.send(["GET", k])); // ResponseType.Nil
-        
         //And here's a redis set
-        writeln(redis.send("SADD myset adil"));
-        writeln(redis.send("SADD myset 350001939"));
-        writeln(redis.send("SADD myset $"));
+        writeln(redis.send("SADD", "myset", "adil"));
+        writeln(redis.send("SADD", "myset", 350001939));
+        writeln(redis.send("SADD", "myset", 1.2));
+        writeln(redis.send("SADD", "myset", true));
         writeln(redis.send("SMEMBERS myset"));
+     
+        //You can also pass your data as an array
+        redis.send("SREM", ["myset", "adil", "350001939"]); //for redis v2.4 and above
      
         //Redis Transactions
         writeln(redis.send("MULTI")); //OK

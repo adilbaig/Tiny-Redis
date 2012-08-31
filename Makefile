@@ -7,4 +7,4 @@ console:
 	rdmd src/console.d $(LIB)
 	
 test:
-	rdmd --main -unittest $(LIB)
+	rdmd -debug --main -unittest $(LIB)
