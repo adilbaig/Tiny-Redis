@@ -35,12 +35,13 @@ To run any of the example programs, or unittests, make sure you have a Redis ser
     writeln("My name is ", r.value); //My name is adil
    
     //Or create a set
-    writeln(redis.send("SADD myset adil"));
-    writeln(redis.send("SADD myset 350001939"));
-    writeln(redis.send("SADD myset $"));
-    writeln(redis.send("SADD myset $"));
+    redis.send("SADD", "myset", "adil");
+    redis.send("SADD", "myset", 350001939);
+    redis.send("SADD", "myset", 1.2);
+    redis.send("SADD", "myset", true);
+    redis.send("SADD", "myset", true);
     writeln(redis.send("SMEMBERS myset"));
-    // Writes : ["adil", "350001939", "$"]
+    // Writes : ["adil", "350001939", "1.2", "true"]
     
     //Transactions
      writeln(redis.send("MULTI")); //OK
