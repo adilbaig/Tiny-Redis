@@ -61,14 +61,14 @@ public :
             
             /**
              * Send a request with a parameterized array. Ex:
-             * send("SREM", ["myset", "$3", "$4"]) == send("SREM myset $3 $4")
              *
+             * send("SREM", ["myset", "$3", "$4"]) == send("SREM myset $3 $4")
              */
             Response send(T)(string key, T[] args)
             {
                 string query = key;
                 
-                static if(is(T == string))
+                static if(is(typeof(T) == string))
                     query ~= " " ~ args.join(" ");
                 else
                     foreach(a; args)
