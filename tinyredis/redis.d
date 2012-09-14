@@ -57,7 +57,7 @@ public :
              *
              * pipelined(["SET ctr 1", "INCR ctr", "INCR ctr", "INCR ctr", "INCR ctr"])
              */
-            Response[] pipeline(string[] commands)
+            Response[] pipeline(const string[] commands)
             {
                 string command;
                 foreach(c; commands)
@@ -95,7 +95,7 @@ private :
             rez ~= buff[0 .. len];
         }while(len > buff.length);
         
-        debug { writeln("Response : ", "'" ~ escape(cast(string)rez) ~ "'"); }
+        debug { writeln("Response : ", "'" ~ escape(cast(string)rez) ~ "'", " Length : ", len); }
         
         return rez;
     }

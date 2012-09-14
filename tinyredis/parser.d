@@ -78,7 +78,7 @@ public :
     /**
      * Encode a request of a parametrized array
      *
-     * encode("SREM", ["myset", "$3", "$4"]) == encode("SREM myset $3 $4")
+     * encode("SREM", ["myset", "$3", "$4"])
      */
     string encode(T)(string key, T[] args)
     {
@@ -106,6 +106,7 @@ public :
         ulong pos = 0, p = 0;
         while(pos < response.length)
         {
+            p = 0;
             results ~= parseResponse(response[pos .. $], p);
             pos += p;
         }
@@ -184,8 +185,12 @@ private :
                 
                 response.type = ResponseType.Bulk;
                 if(l > 0)
-                    response.value = cast(string)mb[pos .. pos + l];
-                
+                {
+                    if(pos + l > mb.length)
+                        response.value = cast(string)mb[pos .. $];
+                    else
+                        response.value = cast(string)mb[pos .. pos + l];
+                }
                 pos += l + 2;
                 return response;
             

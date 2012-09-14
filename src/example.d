@@ -47,7 +47,7 @@ void main()
     }
     
     //Lies, great lies, and benchmarks.
-    uint reqs = 50_000;
+    const uint reqs = 50_000;
     
     StopWatch sw;
     sw.reset();
@@ -56,6 +56,26 @@ void main()
         redis.send("GET name");
     sw.stop();
     
-    auto time = sw.peek().seconds;
-    writeln(reqs/time, " reqs/sec for ", reqs, " requests in ", time, " seconds");
+    auto time = sw.peek().msecs;
+    writeln("INDIVIDUAL : ", reqs/time, " r/msec ", (reqs/time)*1000 , "r/sec ", reqs, " requests in ", time, " msecs");
+    
+    sw.reset();
+    sw.start();
+    
+    //Now test with pipelining
+    const uint batchSize = 70;
+    for(uint j = 0; j < reqs; j += batchSize)
+    {
+        string[batchSize] commands = new string[batchSize];
+        
+        for(uint i = 0; i < batchSize; i++)
+            commands[i] = "GET name";
+        
+        auto response = redis.pipeline(commands);
+    }
+    
+    sw.stop();
+    
+    time = sw.peek().msecs;
+    writeln("PIPELINED  : ", reqs/time, " r/msec ", (reqs/time)*1000 , "r/sec ", reqs, " requests in ", time, " msecs");
 }
