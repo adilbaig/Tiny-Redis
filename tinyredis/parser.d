@@ -55,15 +55,62 @@ public :
 /* ---------- RESPONSE PARSING FUNCTIONS ----------- */
 
     /**
+     * Encode a request to MultiBulk using any type that can be converted to a string
+     *
+     * encode("SADD", "myset", 1)
+     * encode("SADD", "myset", 1.2)
+     * encode("SADD", "myset", true)
+     * encode("SADD", "myset", "Batman")
+     * encode("SADD", "myset", object) //provided toString is implemented
+     * encode("GET", "*") == encode("GET *")
+     */
+    string encode(T...)(string key, T args)
+    {
+        string request = key;
+        
+        static if(args.length > 0)
+            foreach(a; args)
+                request ~= " " ~ text(a);
+        
+        return toMultiBulk(request);
+    }
+    
+    /**
+     * Encode a request of a parametrized array
+     *
+     * encode("SREM", ["myset", "$3", "$4"]) == encode("SREM myset $3 $4")
+     */
+    string encode(T)(string key, T[] args)
+    {
+        string request = key;
+        
+        static if(is(typeof(T) == string))
+            request ~= " " ~ args.join(" ");
+        else
+            foreach(a; args)
+                request ~= " " ~ text(a);
+                
+        return toMultiBulk(request);
+    }
+    
+    /**
      * Parse a response from Redis
      */
-    Response parse(const(byte[]) response)
+    Response[] parse(const(byte[]) response)
     in { assert(response.length > 0); }
 //    out{ assert(response.length == pos); } //Can i do this?
     body
     {
-        ulong pos; //Not used here
-        return parseResponse(response, pos);
+        Response[] results;
+        
+        ulong pos = 0, p = 0;
+        while(pos < response.length)
+        {
+            results ~= parseResponse(response[pos .. $], p);
+            pos += p;
+        }
+        
+        return results;
     }
     
     /* --------- BULK HANDLING FUNCTIONS ---------- */
@@ -181,7 +228,9 @@ unittest
     assert(toBulk("$2") == "$2\r\n$2\r\n");
     assert(toMultiBulk("GET *") == "*2\r\n$3\r\nGET\r\n$1\r\n*\r\n");
     
-    Response response = parse(cast(byte[])"*4\r\n$3\r\nGET\r\n$1\r\n*\r\n:123\r\n+A Status Message\r\n");
+    Response[] r = parse(cast(byte[])"*4\r\n$3\r\nGET\r\n$1\r\n*\r\n:123\r\n+A Status Message\r\n");
+    assert(r.length == 1);
+    auto response = r[0];
     assert(response.type == ResponseType.MultiBulk);
     assert(response.values.length == 4);
     assert(response.values[0].value == "GET");
@@ -189,5 +238,7 @@ unittest
     assert(response.values[2].intval == 123);
 
     assert(response.values[3].value == "A Status Message");
+    assert(encode("SREM", ["myset", "$3", "$4"]) == encode("SREM myset $3 $4"));
+    assert(encode("SREM", "myset", "$3", "$4") == encode("SREM myset $3 $4"));
 //    writeln(response);
 } 

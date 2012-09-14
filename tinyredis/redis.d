@@ -39,16 +39,7 @@ public :
              */
             Response send(T...)(string key, T args)
             {
-                static if(args.length == 0)
-                    return blockingRequest(conn, key);
-                else
-                {    
-                    string query = key;
-                    foreach(a; args)
-                        query ~= " " ~ text(a);
-                            
-                    return blockingRequest(conn, query);
-                }
+                return parse(blockingRequest(conn, encode(key, args)))[0];
             }
             
             /**
@@ -58,27 +49,41 @@ public :
              */
             Response send(T)(string key, T[] args)
             {
-                string query = key;
-                
-                static if(is(typeof(T) == string))
-                    query ~= " " ~ args.join(" ");
-                else
-                    foreach(a; args)
-                        query ~= " " ~ text(a);
-                        
-                return blockingRequest(conn, query);
+                return parse(blockingRequest(conn, encode(key, args)))[0];
+            }
+            
+            /**
+             * Send a series of commands as a pipeline
+             *
+             * pipelined(["SET ctr 1", "INCR ctr", "INCR ctr", "INCR ctr", "INCR ctr"])
+             */
+            Response[] pipeline(string[] commands)
+            {
+                string command;
+                foreach(c; commands)
+                    command ~= encode(c);
+                    
+                return parse(blockingRequest(conn, command));
+            }
+            
+            /**
+             * Send a raw, redis encoded command to the server
+             */
+            Response[] sendRaw(string command)
+            {
+                return parse(blockingRequest(conn, command));
             }
     }
     
 private :
 
-    Response blockingRequest(Socket conn, string request)
+    byte[] blockingRequest(Socket conn, string request)
     in { assert(request.length > 0); }
-    body {
-        auto mb = toMultiBulk(request);
-        debug { writeln("Request : ", "'"~request~"' (MultiBulk : '", escape(mb) ~ "')"); }
+    body 
+    {
+        debug { writeln("Request : '", escape(request) ~ "'"); }
         
-        auto sent = conn.send(mb);
+        auto sent = conn.send(request);
         if (sent == 0)
             throw new ConnectionException("Error while sending request");
             
@@ -92,7 +97,7 @@ private :
         
         debug { writeln("Response : ", "'" ~ escape(cast(string)rez) ~ "'"); }
         
-        return parse(rez);
+        return rez;
     }
     
    /* -------- EXCEPTIONS ------------- */
@@ -117,12 +122,24 @@ unittest
     assert(response.type == ResponseType.Nil);
     
     redis.send("DEL myset");
-    redis.send("SADD myset adil");
-    redis.send("SADD myset 350001939");
-    redis.send("SADD myset $3");
+    redis.send("SADD", "myset", 1);
+    redis.send("SADD", "myset", 1.2);
+    redis.send("SADD", "myset", true);
+    redis.send("SADD", "myset", "adil");
+    redis.send("SADD", "myset", 350001939);
     redis.send("SADD",["myset","$4"]);
-    
-    Response r = redis.send("SMEMBERS myset");
+    auto r = redis.send("SMEMBERS myset");
     assert(r.type == ResponseType.MultiBulk);
-    assert(r.values.length == 4);
+    assert(r.values.length == 6);
+    
+    redis.send("DEL ctr");
+    auto responses = redis.pipeline(["SET ctr 1", "INCR ctr", "INCR ctr", "INCR ctr", "INCR ctr"]);
+//    writeln(responses);
+    
+    assert(responses.length == 5);
+    assert(responses[0].type == ResponseType.Status);
+    assert(responses[1].intval == 2);
+    assert(responses[2].intval == 3);
+    assert(responses[3].intval == 4);
+    assert(responses[4].intval == 5);
 }
