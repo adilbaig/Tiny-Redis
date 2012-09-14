@@ -15,7 +15,7 @@ The more esoteric features like Lua scripting and Pub/Sub have not been tested y
 
 ## Compilation Instructions
 
-	rdmd src/tinyredis.d src/example.d
+	rdmd src/example.d tinyredis/*
 
 If you have *make* installed, run :
 

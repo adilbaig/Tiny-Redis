@@ -1,4 +1,4 @@
-import tinyredis,
+import tinyredis.redis,
        std.stdio,
        std.datetime
     ;
