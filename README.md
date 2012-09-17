@@ -25,6 +25,8 @@ If you have *make* installed, run :
 To run any of the example programs, or unittests, make sure you have a Redis server running on "localhost" on port 6379 (default Redis install)
 
 ## Example
+	import tinyredis.redis; 
+
 	auto redis = new Redis("localhost", 6379);
     
     //An Int reply
@@ -54,7 +56,7 @@ To run any of the example programs, or unittests, make sure you have a Redis ser
      Response[] responses = redis.pipeline(["SET ctr 1", "INCR ctr", "INCR ctr", "INCR ctr", "INCR ctr"]);
      writeln(responses); //[OK, (Integer) 2, (Integer) 3, (Integer) 4, (Integer) 5]
 
-See [example.d](https://github.com/adilbaig/Tiny-Redis/blob/master/src/example.d) and [console.d](https://github.com/adilbaig/Tiny-Redis/blob/master/src/console.d) for more usage samples. You may also want to check out the unittests in [tinyredis.d](https://github.com/adilbaig/Tiny-Redis/blob/master/src/tinyredis.d#L220) 
+See [example.d](https://github.com/adilbaig/Tiny-Redis/blob/master/src/example.d) and [console.d](https://github.com/adilbaig/Tiny-Redis/blob/master/src/console.d) for more usage samples. You may also want to check out the unittests in [tinyredis/*](https://github.com/adilbaig/Tiny-Redis/blob/master/tinyredis/) 
 
 ## Interactive Console
 The integrated interactive console works like redis-cli. To run it, run :
@@ -68,8 +70,11 @@ The integrated interactive console works like redis-cli. To run it, run :
 ## Dependencies
 This library does not have any dependencies. Tested with dmd 2.059 on Linux, and dmd-trunk (2.06ish) on Linux 64bit.  
 
+## Feedback
+If you're using this library please provide some feedback so i can improve it. And thanks! 
+
 ## Contributions
-Please download and play with this project. Open tickets for bugs. Patches, feature requests, suggestiongs to improve the code, documentation, performance and anything else are very welcome.
+Open tickets for bugs. Request a pull for patches/improvements. Feel free to suggest code improvements, new features and anything else.
 
 Adil Baig
 <br />Blog : [adilbaig.posterous.com](http://adilbaig.posterous.com)
