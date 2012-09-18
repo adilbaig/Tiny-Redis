@@ -93,7 +93,7 @@ private :
         do{
             len = conn.receive(buff);
             rez ~= buff[0 .. len];
-        }while(len > buff.length);
+        }while(len == buff.length);
         
         debug { writeln("Response : ", "'" ~ escape(cast(string)rez) ~ "'", " Length : ", len); }
         
