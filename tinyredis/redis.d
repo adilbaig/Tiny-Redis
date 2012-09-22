@@ -1,7 +1,7 @@
 module tinyredis.redis;
 
 private:
-    import std.array     : join;
+    import std.array;
     import std.stdio     : writeln;
     import std.conv      : text;
     import std.socket;
@@ -21,10 +21,15 @@ public :
                 conn = new TcpSocket(new InternetAddress(host, port));
             }
             
-            ~this()
+            void close()
             {
                 if(conn.isAlive())
                     conn.close();
+            }
+            
+            ~this()
+            {
+                this.close();
             }
             
             /**
@@ -39,7 +44,7 @@ public :
              */
             Response send(T...)(string key, T args)
             {
-                return parse(blockingRequest(conn, encode(key, args)))[0];
+                return this.sendRaw(encode(key, args))[0];
             }
             
             /**
@@ -49,13 +54,13 @@ public :
              */
             Response send(T)(string key, T[] args)
             {
-                return parse(blockingRequest(conn, encode(key, args)))[0];
+                return this.sendRaw(encode(key, args))[0];
             }
             
             /**
              * Send a series of commands as a pipeline
              *
-             * pipelined(["SET ctr 1", "INCR ctr", "INCR ctr", "INCR ctr", "INCR ctr"])
+             * pipeline(["SET ctr 1", "INCR ctr", "INCR ctr", "INCR ctr", "INCR ctr"])
              */
             Response[] pipeline(const string[] commands)
             {
@@ -63,41 +68,103 @@ public :
                 foreach(c; commands)
                     command ~= encode(c);
                     
-                return parse(blockingRequest(conn, command));
+                return this.sendRaw(command);
             }
             
             /**
-             * Send a raw, redis encoded command to the server
+             * Send a raw, redis encoded, command to the server and read the response
+             *
+             * sendRaw(encode("GET", "*"));
+             * sendRaw("*2\r\n$3\r\nGET\r\n$1\r\n*\r\n"); 
+             * sendRaw(encode("SET ctr 1") 
+                        ~ encode("INCR ctr")
+                        ~ encode("INCR ctr")
+                        ~ encode("INCR ctr")
+                        ~ encode("INCR ctr") 
+                        ); //Pipelining. Same as pipeline(["SET ctr 1", "INCR ctr", "INCR ctr", "INCR ctr", "INCR ctr"])
              */
             Response[] sendRaw(string command)
             {
-                return parse(blockingRequest(conn, command));
+                sendCommand(conn, command);
+                
+                byte[] buffer;
+                Response[] responses;
+                Response*[] MultiBulks; //Stack of pointers to multibulks
+                Response[]* stackPtr = &responses;
+                
+                while(true)
+                {
+                    receive(conn, buffer);
+                    
+                    while(buffer.length > 0)
+                    {
+                        auto r = parseResponse(buffer);
+                        if(r.type == ResponseType.Invalid)
+                             break;
+                       
+                        *stackPtr ~= r;
+                        if(r.type == ResponseType.MultiBulk)
+                        {
+                            auto mb = &((*stackPtr)[$-1]);
+                            MultiBulks ~= mb;
+                            stackPtr = &((*mb).values);
+                        }
+                        else
+                            while(MultiBulks.length > 0)
+                            {
+                                auto mb = *(MultiBulks.back);
+                                
+                                if(mb.count == mb.values.length)
+                                {
+                                    MultiBulks.popBack();
+                                    
+                                    if(MultiBulks.length > 0)
+                                        stackPtr = &((*MultiBulks.back).values);
+                                    else
+                                        stackPtr = &responses;
+                                }
+                                else
+                                    break;
+                            }
+                    }
+                    
+                    if(buffer.length == 0
+                        && MultiBulks.length == 0) //Make sure all the multi bulks got their data
+                        break;
+                }
+                
+                return responses;
             }
     }
     
 private :
 
-    byte[] blockingRequest(Socket conn, string request)
+    long sendCommand(Socket conn, string request)
     in { assert(request.length > 0); }
     body 
     {
         debug { writeln("Request : '", escape(request) ~ "'"); }
         
         auto sent = conn.send(request);
-        if (sent == 0)
+        if (sent != (cast(byte[])request).length)
             throw new ConnectionException("Error while sending request");
             
-        byte[1024 * 4] buff;
-        byte[] rez;
-        long len;
-        do{
-            len = conn.receive(buff);
-            rez ~= buff[0 .. len];
-        }while(len == buff.length);
+        return sent;
+    }
+    
+    void receive(Socket conn, ref byte[] buffer)
+    {
+        byte[1024] buff;
+        long len = conn.receive(buff);
         
-        debug { writeln("Response : ", "'" ~ escape(cast(string)rez) ~ "'", " Length : ", len); }
+        if(len == 0)
+            throw new ConnectionException("Server closed the connection!");
+        else if(len == Socket.ERROR)
+            throw new ConnectionException("A socket error occured!");
+
+        buffer ~= buff[0 .. len];
         
-        return rez;
+        debug { writeln("Response : ", "'" ~ escape(cast(string)buffer) ~ "'", " Length : ", len); }
     }
     
    /* -------- EXCEPTIONS ------------- */

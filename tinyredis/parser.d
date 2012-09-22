@@ -1,7 +1,7 @@
 module tinyredis.parser;
 
 private:
-    import std.array     : split, replace;
+    import std.array     : split, replace, join;
     import std.stdio     : writeln;
     import std.conv      : to, text;
     
@@ -11,6 +11,7 @@ public :
     
     enum ResponseType : byte 
     {
+        Invalid,
         Status,
         Error,
         Integer,
@@ -22,6 +23,7 @@ public :
     struct Response
     {
         ResponseType type;
+        uint count; //Used for multibulk only
         
         union{
             string value;
@@ -35,6 +37,9 @@ public :
             {
                 case ResponseType.Nil : 
                     return "(Nil)";
+                
+                case ResponseType.Error : 
+                    return "(Err) " ~ value;
                 
                 case ResponseType.Integer : 
                     return "(Integer) "  ~ to!(string)(intval);
@@ -52,10 +57,89 @@ public :
         }
     }
 
-/* ---------- RESPONSE PARSING FUNCTIONS ----------- */
+    /**
+     * Parse a byte stream into a response.
+     */
+    Response parseResponse(ref byte[] mb)
+    {
+        Response response;
+        response.type = ResponseType.Invalid;
+        
+        if(mb.length < 4)
+            return response;
+            
+        char type = mb[0];
+
+        byte[] bytes;
+        if(!getData(mb[1 .. $], bytes)) //This could be an int value (:), a bulk byte length ($), a status message (+) or an error value (-)
+            return response;
+            
+        ulong tpos = 1 + bytes.length;
+        
+        if(tpos + 2 > mb.length)
+            return response;
+        else
+            tpos += 2; //for "\r\n"
+        
+        switch(type)
+        {
+             case '+' : 
+                response.type = ResponseType.Status;
+                response.value = cast(string)bytes;
+                break;
+                
+            case '-' :
+                throw new RedisResponseException(cast(string)bytes);
+                break;
+                
+            case ':' :
+                response.type = ResponseType.Integer;
+                response.intval = to!int(cast(char[])bytes);
+                break;
+                
+            case '$' :
+                int l = to!int(cast(char[])bytes);
+                if(l == -1)
+                {
+                    response.type = ResponseType.Nil;
+                    break;
+                }
+                
+                if(l > 0)
+                {
+                    if(tpos + l >= mb.length) //We dont have enough data, break!
+                        return response;
+                    else
+                    {
+                        response.value = cast(string)mb[tpos .. tpos + l];
+                        tpos += l;
+                            
+                        if(tpos + 2 > mb.length)
+                            return response;
+                        else
+                            tpos += 2;
+                    }
+                }
+                
+                response.type = ResponseType.Bulk;
+                break;
+            
+            case '*' :
+                response.type = ResponseType.MultiBulk;
+                response.count = to!int(cast(char[])bytes);
+                break;
+                
+            default :
+                return response;
+        }
+        
+        mb = mb[tpos .. $];
+        return response;
+    }
+/* ---------- REQUEST PARSING FUNCTIONS ----------- */
 
     /**
-     * Encode a request to MultiBulk using any type that can be converted to a string
+     * Encodes a request to a MultiBulk using any type that can be converted to a string
      *
      * encode("SADD", "myset", 1)
      * encode("SADD", "myset", 1.2)
@@ -84,37 +168,14 @@ public :
     {
         string request = key;
         
-        static if(is(typeof(T) == string))
-            request ~= " " ~ args.join(" ");
+        static if(is(typeof(args) == immutable(char)[]))
+            request ~= " " ~ args;
         else
             foreach(a; args)
                 request ~= " " ~ text(a);
                 
         return toMultiBulk(request);
     }
-    
-    /**
-     * Parse a response from Redis
-     */
-    Response[] parse(const(byte[]) response)
-    in { assert(response.length > 0); }
-//    out{ assert(response.length == pos); } //Can i do this?
-    body
-    {
-        Response[] results;
-        
-        ulong pos = 0, p = 0;
-        while(pos < response.length)
-        {
-            p = 0;
-            results ~= parseResponse(response[pos .. $], p);
-            pos += p;
-        }
-        
-        return results;
-    }
-    
-    /* --------- BULK HANDLING FUNCTIONS ---------- */
     
     string toMultiBulk(string command)
     {
@@ -138,6 +199,7 @@ public :
     }
     
     
+    
     /* ----------- EXCEPTIONS ------------- */
     
     class ParseException : Exception {
@@ -148,83 +210,17 @@ public :
         this(string msg) { super(msg); }
     }
     
-private :
-
-    /**
-     * Parse a byte stream into a response
-     */
-    Response parseResponse(const(byte[]) mb, ref ulong pos)
-    {
-        char type = mb[0];
-        Response response;
-        auto bytes = getData(mb[1 .. $]); //This could be an int value (:), a bulk byte length ($), a status message (+) or an error value (-)
-        pos = 1 + bytes.length + 2;
-        
-        switch(type)
-        {
-             case '+' : 
-                response = Response(ResponseType.Status, cast(string)bytes);
-                return response;
-                
-            case '-' :
-                throw new RedisResponseException(cast(string)bytes);
-                
-            case ':' :
-                response.type = ResponseType.Integer;
-                response.intval = to!int(cast(char[])bytes);
-                return response;
-            
-            case '$' :
-                int l = to!int(cast(char[])bytes);
-                if(l == -1)
-                {
-                    response.type = ResponseType.Nil;
-                    pos = 5;
-                    return response;
-                }
-                
-                response.type = ResponseType.Bulk;
-                if(l > 0)
-                {
-                    if(pos + l > mb.length)
-                        response.value = cast(string)mb[pos .. $];
-                    else
-                        response.value = cast(string)mb[pos .. pos + l];
-                }
-                pos += l + 2;
-                return response;
-            
-            case '*' :
-                response.type = ResponseType.MultiBulk;
-                int items = to!int(cast(char[])bytes);
-                
-                ulong cp = 0;
-                auto data = mb[pos .. $];
-                for(uint i = 0; i < items; i++)
-                {
-                    response.values ~= parseResponse(data, cp);
-                    data = data[cp .. $];
-                    pos += cp;
-                }
-                
-                return response;
-            
-            default :
-                throw new Exception("Cannot understand response!");
-        }
-    }
     
-    byte[] getData(const(byte[]) mb)
+private :
+    bool getData(const(byte[]) mb, ref byte[] data)
     {
-        byte[] lgth;
         foreach(p, byte c; mb)
-        {
             if(c == 13) //'\r' 
-                break;
-                
-            lgth ~= c;
-        }
-        return lgth;
+                return true;
+            else
+                data ~= c;
+
+        return false;
     }
     
     
@@ -233,17 +229,35 @@ unittest
     assert(toBulk("$2") == "$2\r\n$2\r\n");
     assert(toMultiBulk("GET *") == "*2\r\n$3\r\nGET\r\n$1\r\n*\r\n");
     
-    Response[] r = parse(cast(byte[])"*4\r\n$3\r\nGET\r\n$1\r\n*\r\n:123\r\n+A Status Message\r\n");
-    assert(r.length == 1);
-    auto response = r[0];
+    byte[] stream = cast(byte[])"*4\r\n$3\r\nGET\r\n$1\r\n*\r\n:123\r\n+A Status Message\r\n";
+    
+    auto response = parseResponse(stream);
     assert(response.type == ResponseType.MultiBulk);
-    assert(response.values.length == 4);
-    assert(response.values[0].value == "GET");
-    assert(response.values[1].value == "*");
-    assert(response.values[2].intval == 123);
+    assert(response.count == 4);
+    assert(response.values.length == 0);
+    
+    response = parseResponse(stream);
+    assert(response.type == ResponseType.Bulk);
+    assert(response.value == "GET");
+    
+    response = parseResponse(stream);
+    assert(response.type == ResponseType.Bulk);
+    assert(response.value == "*");
+    
+    response = parseResponse(stream);
+    assert(response.type == ResponseType.Integer);
+    assert(response.intval == 123);
+    
+    response = parseResponse(stream);
+    assert(response.type == ResponseType.Status);
+    assert(response.value == "A Status Message");
 
-    assert(response.values[3].value == "A Status Message");
+    assert(stream.length == 0);
+    assert(parseResponse(stream).type == ResponseType.Invalid);
+
     assert(encode("SREM", ["myset", "$3", "$4"]) == encode("SREM myset $3 $4"));
-    assert(encode("SREM", "myset", "$3", "$4") == encode("SREM myset $3 $4"));
+    assert(encode("SREM", "myset", "$3", "$4")   == encode("SREM myset $3 $4"));
+    assert(encode("TTL", "myset")   == encode("TTL myset"));
+    assert(encode("TTL", ["myset"]) == encode("TTL myset"));
 //    writeln(response);
 } 
