@@ -154,7 +154,7 @@ private :
     
     void receive(Socket conn, ref byte[] buffer)
     {
-        byte[1024] buff;
+        byte[1024 * 16] buff;
         long len = conn.receive(buff);
         
         if(len == 0)
