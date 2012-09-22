@@ -6,6 +6,9 @@ example:
 console:
 	rdmd src/console.d $(LIB)
 	
+benchmark:
+	rdmd src/benchmark.d $(LIB)
+	
 test:
 	rdmd -debug --main -unittest tinyredis/parser.d
 	rdmd -debug --main -unittest tinyredis/redis.d

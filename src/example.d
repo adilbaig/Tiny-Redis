@@ -1,6 +1,5 @@
 import tinyredis.redis,
-       std.stdio,
-       std.datetime
+       std.stdio
     ;
 
 /**
@@ -31,13 +30,14 @@ void main()
         writeln(redis.send("SMEMBERS myset"));
      
         //You can also pass your data as an array
-        redis.send("SREM", ["myset", "adil", "350001939"]); //for redis v2.4 and above
+//        redis.send("SREM", ["myset", "adil", "350001939"]); //for redis v2.4 and above
      
         //Redis Transactions
         writeln(redis.send("MULTI")); //OK
         writeln(redis.send("INCR foo")); //QUEUED
+        writeln(redis.send("SMEMBERS myset")); //QUEUED
         writeln(redis.send("INCR bar")); //QUEUED
-        writeln(redis.send("EXEC")); //[(Integer) 1, (Integer) 1] 
+        writeln(redis.send("EXEC")); //[(Integer) 1, [350001939, $4, true, 1, 1.2, adil], (Integer) 1]
         
         //And finally this command will throw a RedisResponseException
         writeln(redis.send("AND THIS IS A COMMAND REDIS DOES NOT UNDERSTAND"));
@@ -45,37 +45,4 @@ void main()
     {
         writeln("(error) ", e.msg);
     }
-    
-    //Lies, great lies, and benchmarks.
-    const uint reqs = 50_000;
-    
-    StopWatch sw;
-    sw.reset();
-    sw.start();
-    for(uint i = 0; i < reqs; i++)
-        redis.send("GET name");
-    sw.stop();
-    
-    auto time = sw.peek().msecs;
-    writeln("INDIVIDUAL : ", reqs/time, " r/msec ", (reqs/time)*1000 , "r/sec ", reqs, " requests in ", time, " msecs");
-    
-    sw.reset();
-    sw.start();
-    
-    //Now test with pipelining
-    const uint batchSize = 70;
-    for(uint j = 0; j < reqs; j += batchSize)
-    {
-        string[batchSize] commands = new string[batchSize];
-        
-        for(uint i = 0; i < batchSize; i++)
-            commands[i] = "GET name";
-        
-        auto response = redis.pipeline(commands);
-    }
-    
-    sw.stop();
-    
-    time = sw.peek().msecs;
-    writeln("PIPELINED  : ", reqs/time, " r/msec ", (reqs/time)*1000 , "r/sec ", reqs, " requests in ", time, " msecs");
 }
