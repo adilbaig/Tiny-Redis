@@ -1,9 +1,9 @@
 module tinyredis.parser;
 
 private:
-    import std.array     : split, replace, join;
-    import std.stdio     : writeln;
-    import std.conv      : to, text;
+    import std.array : split, replace, join;
+    import std.stdio : writeln;
+    import std.conv  : to, text;
     
 public : 
 
@@ -31,7 +31,7 @@ public :
             Response[] values;
         }
         
-        @property string toString()
+        @property @trusted string toString()
         {
             switch(type)
             {
@@ -58,9 +58,12 @@ public :
     }
 
     /**
-     * Parse a byte stream into a response.
+     * Parse a byte stream into a response. If successful remove that chunk from "mb" and return Response.
+     * On failure returns a ResponseType.Invalid Response and does not modify "mb" 
+     * 
+     * @return Response
      */
-    Response parseResponse(ref byte[] mb)
+    @trusted Response parseResponse(ref byte[] mb)
     {
         Response response;
         response.type = ResponseType.Invalid;
@@ -136,7 +139,8 @@ public :
         mb = mb[tpos .. $];
         return response;
     }
-/* ---------- REQUEST PARSING FUNCTIONS ----------- */
+    
+    /* ---------- REQUEST PARSING FUNCTIONS ----------- */
 
     /**
      * Encodes a request to a MultiBulk using any type that can be converted to a string
@@ -148,7 +152,7 @@ public :
      * encode("SADD", "myset", object) //provided toString is implemented
      * encode("GET", "*") == encode("GET *")
      */
-    string encode(T...)(string key, T args)
+    @trusted string encode(T...)(string key, T args)
     {
         string request = key;
         
@@ -164,7 +168,7 @@ public :
      *
      * encode("SREM", ["myset", "$3", "$4"])
      */
-    string encode(T)(string key, T[] args)
+    @trusted string encode(T)(string key, T[] args)
     {
         string request = key;
         
@@ -177,7 +181,7 @@ public :
         return toMultiBulk(request);
     }
     
-    string toMultiBulk(string command)
+    @trusted string toMultiBulk(string command)
     {
         string[] cmds = command.split();
         char[] res = "*" ~ to!(char[])(cmds.length) ~ CRLF;
@@ -187,13 +191,12 @@ public :
         return cast(string)res;
     }
     
-    string toBulk(string str)
+    @trusted string toBulk(string str)
     {
-        auto bytes = cast(byte[])str;
-        return "$" ~ to!string(bytes.length) ~ CRLF ~ str ~ CRLF;
+        return "$" ~ to!string((cast(byte[])str).length) ~ CRLF ~ str ~ CRLF;
     }
     
-    string escape(string str)
+    @trusted string escape(string str)
     {
          return replace(str,"\r\n","\\r\\n");
     }
@@ -212,7 +215,7 @@ public :
     
     
 private :
-    bool getData(const(byte[]) mb, ref byte[] data)
+    @safe pure bool getData(const(byte[]) mb, ref byte[] data)
     {
         foreach(p, byte c; mb)
             if(c == 13) //'\r' 
