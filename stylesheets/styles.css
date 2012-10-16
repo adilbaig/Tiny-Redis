@@ -255,8 +255,7 @@ header ul {
 
 header li {
 	list-style-type: none;
-  width:132px;
-  height:15px;
+  width:100%;
 	margin-bottom: 12px;
 	line-height: 1em;
 	padding: 6px 6px 6px 7px;
