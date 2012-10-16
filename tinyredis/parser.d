@@ -77,7 +77,7 @@ public :
         if(!getData(mb[1 .. $], bytes)) //This could be an int value (:), a bulk byte length ($), a status message (+) or an error value (-)
             return response;
             
-        ulong tpos = 1 + bytes.length;
+        size_t tpos = 1 + bytes.length;
         
         if(tpos + 2 > mb.length)
             return response;
