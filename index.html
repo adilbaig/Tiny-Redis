@@ -45,7 +45,7 @@ writeln("The name's ", redis.send("GET name")) //The name's Adil
 
 <h2>Supports ..</h2>
 
-<p>All basic operations on all data types :</p>
+<p>All basic operations on all data types are supported.</p>
 
 <ul>
 	<li>strings</li>
@@ -53,6 +53,10 @@ writeln("The name's ", redis.send("GET name")) //The name's Adil
 	<li>lists</li>
 	<li>sets</li>
 	<li>sorted sets</li>
+</ul>
+
+<p>Also includes support for </p>
+<ul>
 	<li>transactions</li>
 	<li>pipelining (New!)</li>
 </ul>
@@ -104,17 +108,17 @@ writeln(redis.send("SMEMBERS myset"));
 <pre><code>rdmd src/example.d tinyredis/*</code></pre>
 
 <h2>Other programs</h2>
-<h3>The Example Program</h3>
+<h4>The Example Program</h4>
 <p>To help you get started, look at the example file included in source. If you have <em>make</em> installed, run :</p>
 <pre><code>make example</code></pre>
 <p>The output is not interesting, look at the code.</p>
 <p>To run any of the example programs, or unittests, make sure you have a Redis server running on "localhost" on port 6379 (default Redis install)</p>
 
-<h3>The Interactive Console</h3>
+<h4>The Interactive Console</h4>
 <p>The integrated interactive console works like redis-cli. To run it, run :</p>
 <pre><code>make console</code></pre>
 
-<h3>Benchmark</h3>
+<h4>Benchmark</h4>
 <p>A simple benchmark is include. To see how redis performs on your PC/Server, run :</p>
 <pre><code>make benchmark</code></pre>
 
@@ -123,6 +127,12 @@ writeln(redis.send("SMEMBERS myset"));
 
 <h2>Dependencies</h2>
 <p>None. Tested with dmd 2.059/2.060 on Linux x64.</p>
+
+<h2>Limitations</h2>
+<ul>
+<li>Lua Scripting has not been tested yet.</li>
+<li>Pub/Sub and the "monitor" command need special support. Not done yet</li>
+</ul>
 
 <h2>Feedback</h2>
 <p>If you're using this library please provide some feedback so i can improve it. You can add a <a href="https://github.com/adilbaig/Tiny-Redis/issues">support ticket</a>. And thanks! </p>
