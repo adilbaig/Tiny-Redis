@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="chrome=1">
-    <title>Tiny-redis by adilbaig</title>
+    <title>Tiny Redis - Redis driver for D, by adilbaig</title>
 
     <link rel="stylesheet" href="stylesheets/styles.css">
     <link rel="stylesheet" href="stylesheets/pygment_trac.css">
@@ -16,16 +16,17 @@
   <body>
     <div class="wrapper">
       <header>
-        <h1 class="header">Tiny-redis</h1>
-        <p class="header">A simple but powerful Redis driver in D</p>
+        <h1 class="header">Tiny Redis</h1>
+        <p class="header">Simple, powerful. Redis driver written in <a href="http://www.dlang.org">D</a></p>
 
         <ul>
-          <li class="download"><a class="buttons" href="https://github.com/adilbaig/Tiny-Redis/zipball/master">Download ZIP</a></li>
-          <li class="download"><a class="buttons" href="https://github.com/adilbaig/Tiny-Redis/tarball/master">Download TAR</a></li>
+          <li class="download"><a class="buttons" href="https://github.com/downloads/adilbaig/Tiny-Redis/tinyredis.a">Linux x32 - Single file, shared Lib</a></li>
+          <li class="download"><a class="buttons" href="https://github.com/downloads/adilbaig/Tiny-Redis/tinyredis_x64.a">Linux x64 - Single file, Shared Lib</a></li>
+          <li class="download"><a class="buttons" href="https://github.com/downloads/adilbaig/Tiny-Redis/TinyRedis.tar.gz">All platforms - Source, examples, benchmark</a></li>
           <li><a class="buttons github" href="https://github.com/adilbaig/Tiny-Redis">View On GitHub</a></li>
         </ul>
 
-        <p class="header">This project is maintained by <a class="header name" href="https://github.com/adilbaig">adilbaig</a></p>
+        <p class="header">By <a class="header name" href="https://github.com/adilbaig">Adil Baig</a></p>
 
 
       </header>
@@ -33,6 +34,16 @@
         <h1>Tiny Redis</h1>
 
 <p>Tiny Redis is a Redis driver for the D programming language (v2). It is intentionally minimal, but powerful and makes working with Redis trivial.</p>
+
+<h2>Quick Example</h2>
+
+<pre><code>import tinyredis.redis; 
+
+auto redis = new Redis("localhost", 6379);
+
+redis.send("SET name Adil");
+writeln("The name's ", redis.send("GET name")) //The name's Adil
+</code></pre>
 
 <h2>Support</h2>
 
@@ -48,18 +59,7 @@
 <li>pipelining (New!)</li>
 </ul><p>The more esoteric features like Lua scripting and Pub/Sub have not been tested yet.</p>
 
-<h2>Compilation Instructions</h2>
-
-<p>rdmd src/example.d tinyredis/*</p>
-
-<p>If you have <em>make</em> installed, run :</p>
-
-<pre><code>make example
-</code></pre>
-
-<p>To run any of the example programs, or unittests, make sure you have a Redis server running on "localhost" on port 6379 (default Redis install)</p>
-
-<h2>Example</h2>
+<h2>A longer example</h2>
 
 <pre><code>import tinyredis.redis; 
 
@@ -95,25 +95,52 @@ writeln(redis.send("SMEMBERS myset"));
 
 <p>See <a href="https://github.com/adilbaig/Tiny-Redis/blob/master/src/example.d">example.d</a> and <a href="https://github.com/adilbaig/Tiny-Redis/blob/master/src/console.d">console.d</a> for more usage samples. You may also want to check out the unittests in <a href="https://github.com/adilbaig/Tiny-Redis/blob/master/tinyredis/">tinyredis/*</a> </p>
 
-<h2>Interactive Console</h2>
+<h2>Compilation Instructions</h2>
+<h3>Using shared library</h3>
+<p>Download the shared library for your platform and compile it with your source files. Ex:</p>
+<pre><code>
+	dmd src/example.d tinyredis_x64.a
+</code></pre>
+<h3>Using source code</h3>
+<p>Works for all platforms. Ex:</p>
+<pre><code>
+	rdmd src/example.d tinyredis/*
+</code></pre>
+
+<h2>Other programs</h2>
+<h3>Example</h3>
+<p>To help you get started, look at the example file included in source. If you have <em>make</em> installed, run :</p>
+
+<pre><code>make example
+</code></pre>
+
+<p>The output is not interesting, look at the code.</p>
+<p>To run any of the example programs, or unittests, make sure you have a Redis server running on "localhost" on port 6379 (default Redis install)</p>
+
+<h3>Interactive Console</h3>
 
 <p>The integrated interactive console works like redis-cli. To run it, run :</p>
 
 <pre><code>make console
 </code></pre>
 
-<h2>Run Unittests</h2>
+<h3>Benchmark</h3>
+
+<p>A simple benchmark is include. To see how redis performs on your PC/Server, run :</p>
+
+<pre><code>make benchmark
+</code></pre>
+
+<h3>Run Unittests</h3>
 
 <pre><code>make test
 </code></pre>
 
 <h2>Dependencies</h2>
-
-<p>This library does not have any dependencies. Tested with dmd 2.059 on Linux, and dmd-trunk (2.06ish) on Linux 64bit.  </p>
+<p>None. Tested with dmd 2.059/2.060 on Linux x64.</p>
 
 <h2>Feedback</h2>
-
-<p>If you're using this library please provide some feedback so i can improve it. And thanks! </p>
+<p>If you're using this library please provide some feedback so i can improve it. You can add a <a href="https://github.com/adilbaig/Tiny-Redis/issues">support ticket</a>. And thanks! </p>
 
 <h2>Contributions</h2>
 
