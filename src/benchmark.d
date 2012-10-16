@@ -14,7 +14,7 @@ void main()
     auto redis = new Redis("localhost", 6379);
     
     //Lies, great lies, and benchmarks.
-    const uint reqs = 50_000;
+    const uint reqs = 500_000;
     
     StopWatch sw;
     sw.reset();
