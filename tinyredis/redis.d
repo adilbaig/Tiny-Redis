@@ -2,14 +2,13 @@ module tinyredis.redis;
 
 private:
     import std.array;
-    import std.stdio     : writeln;
-    import std.conv      : text;
+    import std.stdio : writeln;
+    import std.conv  : text;
     import std.socket;
     
 public :
-
     import tinyredis.parser;
-        
+
     class Redis
     {
         private :
@@ -64,11 +63,11 @@ public :
              */
             Response[] pipeline(const string[] commands)
             {
-                string command;
+                auto app = appender!string();
                 foreach(c; commands)
-                    command ~= encode(c);
-                    
-                return this.sendRaw(command);
+                    app.put(encode(c));
+                
+                return this.sendRaw(app.data);
             }
             
             /**
@@ -86,54 +85,7 @@ public :
             Response[] sendRaw(string command)
             {
                 sendCommand(conn, command);
-                
-                byte[] buffer;
-                Response[] responses;
-                Response*[] MultiBulks; //Stack of pointers to multibulks
-                Response[]* stackPtr = &responses;
-                
-                while(true)
-                {
-                    receive(conn, buffer);
-                    
-                    while(buffer.length > 0)
-                    {
-                        auto r = parseResponse(buffer);
-                        if(r.type == ResponseType.Invalid)
-                             break;
-                       
-                        *stackPtr ~= r;
-                        if(r.type == ResponseType.MultiBulk)
-                        {
-                            auto mb = &((*stackPtr)[$-1]);
-                            MultiBulks ~= mb;
-                            stackPtr = &((*mb).values);
-                        }
-                        else
-                            while(MultiBulks.length > 0)
-                            {
-                                auto mb = *(MultiBulks.back);
-                                
-                                if(mb.count == mb.values.length)
-                                {
-                                    MultiBulks.popBack();
-                                    
-                                    if(MultiBulks.length > 0)
-                                        stackPtr = &((*MultiBulks.back).values);
-                                    else
-                                        stackPtr = &responses;
-                                }
-                                else
-                                    break;
-                            }
-                    }
-                    
-                    if(buffer.length == 0
-                        && MultiBulks.length == 0) //Make sure all the multi bulks got their data
-                        break;
-                }
-                
-                return responses;
+                return receiveResponses(conn);
             }
     }
     
@@ -165,6 +117,57 @@ private :
         buffer ~= buff[0 .. len];
         
         debug { writeln("Response : ", "'" ~ escape(cast(string)buffer) ~ "'", " Length : ", len); }
+    }
+    
+    Response[] receiveResponses(Socket conn)
+    {
+        byte[] buffer;
+        Response[] responses;
+        Response*[] MultiBulks; //Stack of pointers to multibulks
+        Response[]* stackPtr = &responses;
+        
+        while(true)
+        {
+            receive(conn, buffer);
+            
+            while(buffer.length > 0)
+            {
+                auto r = parseResponse(buffer);
+                if(r.type == ResponseType.Invalid)
+                     break;
+               
+                *stackPtr ~= r;
+                if(r.type == ResponseType.MultiBulk)
+                {
+                    auto mb = &((*stackPtr)[$-1]);
+                    MultiBulks ~= mb;
+                    stackPtr = &((*mb).values);
+                }
+                else
+                    while(MultiBulks.length > 0)
+                    {
+                        auto mb = *(MultiBulks.back);
+                        
+                        if(mb.count == mb.values.length)
+                        {
+                            MultiBulks.popBack();
+                            
+                            if(MultiBulks.length > 0)
+                                stackPtr = &((*MultiBulks.back).values);
+                            else
+                                stackPtr = &responses;
+                        }
+                        else
+                            break;
+                    }
+            }
+            
+            if(buffer.length == 0
+                && MultiBulks.length == 0) //Make sure all the multi bulks got their data
+                break;
+        }
+        
+        return responses;
     }
     
    /* -------- EXCEPTIONS ------------- */
