@@ -10,7 +10,7 @@ benchmark:
 	rdmd src/benchmark.d $(LIB)
 	
 lib:
-	dmd -lib -m32 tinyredis/* -oftinyredis.a
+	dmd -lib tinyredis/* -oftinyredis.a
 	
 test:
 	rdmd -debug --main -unittest tinyredis/parser.d
