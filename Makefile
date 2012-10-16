@@ -9,6 +9,9 @@ console:
 benchmark:
 	rdmd src/benchmark.d $(LIB)
 	
+lib:
+	dmd -lib -m32 tinyredis/* -oftinyredis.a
+	
 test:
 	rdmd -debug --main -unittest tinyredis/parser.d
 	rdmd -debug --main -unittest tinyredis/redis.d
