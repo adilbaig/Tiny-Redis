@@ -19,7 +19,9 @@ void main()
         
         if(buf.length > 0)
             try{
-                writeln(redis.send(cast(string)buf));
+                auto resp = redis.send(cast(string)buf);
+                writeln(resp.toDiagnosticString());
+                
             }catch(RedisResponseException e)
             {
                 writeln("(error) ", e.msg);

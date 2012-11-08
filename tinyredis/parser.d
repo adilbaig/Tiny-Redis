@@ -31,19 +31,70 @@ public :
             Response[] values;
         }
         
+        @safe bool canConvert(T)(T t)
+        {
+            return (
+                is(typeof(t) == bool)
+                || is(typeof(t) == int)
+                || is(typeof(t) == string)
+                );
+        }
+        
+        T opCast(T)()
+        if(canConvert(T))
+        {
+            if(is(T == bool))
+                return toBool();
+            else if(is(T == int))
+                return toInt();
+            else if(is(T == string))
+                return toString();
+        }
+        
+        @property @trusted bool toBool()
+        {
+            switch(type)
+            {
+                case ResponseType.Integer : 
+                    return (intval > 0);
+                    
+                case ResponseType.Status :
+                    return (value == "OK");
+                    
+                case ResponseType.Bulk : 
+                    return (value.length > 0);
+                    
+                case ResponseType.MultiBulk :
+                    return (values.length > 0);
+                    
+                default:
+                    return false;
+            }
+        }
+        
+        @property @trusted int toInt()
+        {
+            switch(type)
+            {
+                case ResponseType.Integer : 
+                    return intval;
+                    
+                case ResponseType.Bulk : 
+                    return to!(int)(value);
+                    
+                default:
+                    throw new RedisCastException("Cannot cast " ~ type ~ " to " ~ to!(string)(typeid(size_t)));
+            }
+        }
+        
         @property @trusted string toString()
         {
             switch(type)
             {
-                case ResponseType.Nil : 
-                    return "(Nil)";
-                
-                case ResponseType.Error : 
-                    return "(Err) " ~ value;
-                
                 case ResponseType.Integer : 
-                    return "(Integer) "  ~ to!(string)(intval);
+                    return to!(string)(intval);
                     
+                case ResponseType.Error :
                 case ResponseType.Status :
                 case ResponseType.Bulk : 
                     return value;
@@ -53,6 +104,35 @@ public :
                     
                 default:
                     return "";
+            }
+        }
+        
+        @property @trusted string toDiagnosticString()
+        {
+            final switch(type)
+            {
+                case ResponseType.Nil : 
+                    return "(Nil)";
+                
+                case ResponseType.Error : 
+                    return "(Err) " ~ value;
+                
+                case ResponseType.Integer : 
+                    return "(Integer) " ~ to!(string)(intval);
+                    
+                case ResponseType.Status :
+                    return "(Status) " ~ value;
+                    
+                case ResponseType.Bulk : 
+                    return value;
+                    
+                case ResponseType.MultiBulk :
+                    string[] t;
+                    
+                    foreach(v; values)
+                        t ~= v.toDiagnosticString();
+                        
+                    return text(t);
             }
         }
     }
@@ -213,6 +293,10 @@ public :
         this(string msg) { super(msg); }
     }
     
+    class RedisCastException : Exception {
+        this(string msg) { super(msg); }
+    }
+    
     
 private :
     @safe pure bool getData(const(byte[]) mb, ref byte[] data)
@@ -246,10 +330,12 @@ unittest
     response = parseResponse(stream);
     assert(response.type == ResponseType.Bulk);
     assert(response.value == "*");
+    assert(cast(bool)response.value == true);
     
     response = parseResponse(stream);
     assert(response.type == ResponseType.Integer);
     assert(response.intval == 123);
+    assert(cast(string)response == "123");
     
     response = parseResponse(stream);
     assert(response.type == ResponseType.Status);
@@ -257,6 +343,15 @@ unittest
 
     assert(stream.length == 0);
     assert(parseResponse(stream).type == ResponseType.Invalid);
+
+    stream = cast(byte[])"*0\r\n";
+    response = parseResponse(stream);
+    assert(response.count == 0);
+    assert(response.values.length == 0);
+    assert(response.values == []);
+    assert(response.toString == "[]");
+    assert(response.toBool == false);
+    assert(cast(bool)response == false);
 
     assert(encode("SREM", ["myset", "$3", "$4"]) == encode("SREM myset $3 $4"));
     assert(encode("SREM", "myset", "$3", "$4")   == encode("SREM myset $3 $4"));
