@@ -15,8 +15,8 @@ lib:
 release:
 	dmd -lib -m32 tinyredis/* -oflibs/tinyredis_$(VERSION).a
 	dmd -lib tinyredis/* -oflibs/tinyredis_$(VERSION)_x64.a
-	rm -f TinyRedis.tgz
-	tar czf TinyRedis.tgz src/* tinyredis/* libs/* README.md LICENSE
+	rm -f TinyRedis_$(VERSION).tgz
+	tar czf TinyRedis_$(VERSION).tgz src/* tinyredis/* libs/* README.md LICENSE
 	
 test:
 	rdmd -debug --main -unittest tinyredis/parser.d
