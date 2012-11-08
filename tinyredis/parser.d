@@ -31,23 +31,16 @@ public :
             Response[] values;
         }
         
-        @safe bool canConvert(T)(T t)
-        {
-            return (
-                is(typeof(t) == bool)
-                || is(typeof(t) == int)
-                || is(typeof(t) == string)
-                );
-        }
-        
         T opCast(T)()
-        if(canConvert(T))
+        if(is(T == bool)
+                || is(T == int)
+                || is(T == string))
         {
-            if(is(T == bool))
+            static if(is(T == bool))
                 return toBool();
-            else if(is(T == int))
+            else static if(is(T == int))
                 return toInt();
-            else if(is(T == string))
+            else static if(is(T == string))
                 return toString();
         }
         
@@ -326,16 +319,18 @@ unittest
     response = parseResponse(stream);
     assert(response.type == ResponseType.Bulk);
     assert(response.value == "GET");
+    assert(cast(string)response == "GET");
     
     response = parseResponse(stream);
     assert(response.type == ResponseType.Bulk);
     assert(response.value == "*");
-    assert(cast(bool)response.value == true);
+    assert(cast(bool)response == true);
     
     response = parseResponse(stream);
     assert(response.type == ResponseType.Integer);
     assert(response.intval == 123);
     assert(cast(string)response == "123");
+    assert(cast(int)response == 123);
     
     response = parseResponse(stream);
     assert(response.type == ResponseType.Status);

@@ -31,9 +31,8 @@ public :
          * send("GET", "*") == send("GET *")
          */
         R send(R = Response, T...)(string key, T args)
-        if(is(R == Response) || Response.canConvert(R))
         {
-            return conn.request(encode(key, args))[0];
+            return cast(R)(conn.request(encode(key, args))[0]);
         }
         
         /**
@@ -41,9 +40,9 @@ public :
          *
          * send("SREM", ["myset", "$3", "$4"]) == send("SREM myset $3 $4")
          */
-        Response send(T)(string key, T[] args)
+        R send(R = Response, T)(string key, T[] args)
         {
-            return conn.request(encode(key, args))[0];
+            return cast(R)conn.request(encode(key, args))[0];
         }
         
         /**
@@ -66,37 +65,6 @@ public :
                 app.put(encode(c));
             
             return conn.request(app.data);
-        }        
-        
-        private:
-        string[] convertToArray(Response response)
-        {
-            string[] resp;
-            foreach(val; response.values)
-                resp ~= val.value;
-            return resp;
-        }
-        
-        RET convert(RET=Response)(Response response)
-        {
-            static if(is(RET == bool)) 
-            {
-                if(response.type == ResponseType.Status)
-                    return (response.value == "OK");
-                else if(response.type == ResponseType.Integer)
-                    return (response.intval == 1);
-                else
-                    throw new Exception("Cannot convert " ~ response.type ~ " to bool");
-            }
-            else if(is(RET == int) || is(RET == long) || is(RET == size_t) || is(RET == double))
-            {
-                if(response.type == ResponseType.Integer)
-                    return cast(RET)response.intval;
-                else
-                    return to!RET(response.value);
-            }
-            else
-                return response;
         }
     }
    
@@ -112,6 +80,8 @@ unittest
     response = redis.send("GET name");
     assert(response.type == ResponseType.Bulk);
     assert(response.value == "adil");
+    
+    assert(redis.send!(string)("GET name") == "adil");
     
     response = redis.send("GET nonexistentkey");
     assert(response.type == ResponseType.Nil);
