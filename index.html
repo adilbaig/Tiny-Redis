@@ -20,11 +20,10 @@
         <p class="header">Fast, Simple, Unit-Tested. Redis driver for <a href="http://www.dlang.org">D</a></p>
 
         <ul>
-          <li class="download"><a class="buttons" href="https://github.com/downloads/adilbaig/Tiny-Redis/tinyredis.a">Linux x32 - Shared lib</a></li>
-          <li class="download"><a class="buttons" href="https://github.com/downloads/adilbaig/Tiny-Redis/tinyredis_x64.a">Linux x64 - Shared lib</a></li>
-          <li class="download"><a class="buttons" href="https://github.com/downloads/adilbaig/Tiny-Redis/TinyRedis.tar.gz">All platforms - Source, examples, benchmark</a></li>
+          <li class="download"><a class="buttons" href="https://github.com/downloads/adilbaig/Tiny-Redis/tinyredis_v1.1.a">Linux x32 - Shared lib</a></li>
+          <li class="download"><a class="buttons" href="https://github.com/downloads/adilbaig/Tiny-Redis/tinyredis_v1.1_x64.a">Linux x64 - Shared lib</a></li>
+          <li class="download"><a class="buttons" href="https://github.com/downloads/adilbaig/Tiny-Redis/TinyRedis.tgz">All platforms - Source, examples, benchmark</a></li>
           <li><a class="buttons github" href="https://github.com/adilbaig/Tiny-Redis">View On GitHub</a></li>
-          <li><a class="buttons github" href="https://github.com/adilbaig/Tiny-Redis/star">Follow on GitHub</a></li>
         </ul>
 
         <p class="header">By <a class="header name" href="https://github.com/adilbaig">Adil Baig</a></p>
@@ -73,8 +72,9 @@ writeln(redis.send("LASTSAVE"));
 
 //Get/Set
 redis.send("SET name adil");
-auto r = redis.send("GET name");
-writeln("My name is ", r.value); //My name is adil
+
+if(redis.send("EXISTS name"))
+	writeln("My name is ", redis.send("GET name")); //My name is adil
 
 //Or create a set
 redis.send("SADD", "myset", "adil");
