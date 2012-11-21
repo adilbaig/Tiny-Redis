@@ -126,6 +126,9 @@ public :
                         t ~= v.toDiagnosticString();
                         
                     return text(t);
+                    
+                case ResponseType.Invalid :
+                    return "(Invalid)";
             }
         }
     }
