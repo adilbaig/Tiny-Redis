@@ -46,7 +46,7 @@ public :
         }
         
         /**
-         * Send a redis-encoded string. It can be one or more commands
+         * Send a redis-encoded string. It can be one or more commands concatenated together
          */
         Response[] sendRaw(string command)
         {

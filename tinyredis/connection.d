@@ -6,8 +6,6 @@ private:
     import std.socket;
     import tinyredis.parser;
     
-//public :
-//    import tinyredis.parser;
 
     class RedisConnection
     {

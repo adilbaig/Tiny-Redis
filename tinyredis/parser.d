@@ -136,8 +136,6 @@ public :
     /**
      * Parse a byte stream into a response. If successful remove that chunk from "mb" and return Response.
      * On failure returns a ResponseType.Invalid Response and does not modify "mb" 
-     * 
-     * @return Response
      */
     @trusted Response parseResponse(ref byte[] mb)
     {
@@ -338,7 +336,9 @@ unittest
     response = parseResponse(stream);
     assert(response.type == ResponseType.Status);
     assert(response.value == "A Status Message");
+    assert(cast(string)response == "A Status Message");
 
+    //Stream should have been used up, verify
     assert(stream.length == 0);
     assert(parseResponse(stream).type == ResponseType.Invalid);
 
@@ -350,6 +350,12 @@ unittest
     assert(response.toString == "[]");
     assert(response.toBool == false);
     assert(cast(bool)response == false);
+    try{
+        cast(int)response;
+    }catch(RedisCastException e)
+    {
+        assert(true);
+    }
 
     assert(encode("SREM", ["myset", "$3", "$4"]) == encode("SREM myset $3 $4"));
     assert(encode("SREM", "myset", "$3", "$4")   == encode("SREM myset $3 $4"));
