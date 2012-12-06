@@ -3,7 +3,7 @@ module tinyredis.parser;
 private:
     import std.array : split, replace, join;
     import std.stdio : writeln;
-    import std.conv  : to, text;
+    import std.conv  : to, text, ConvOverflowException;
     
 public : 
 
@@ -119,8 +119,14 @@ public :
                     return intval;
                     
                 case ResponseType.Bulk : 
+                try{
                     return to!(int)(value);
-                    
+                }catch(ConvOverflowException e)
+                {
+                    e.msg = "Cannot convert " ~ value ~ " to int";
+                    throw e;
+                }
+                
                 default:
                     throw new RedisCastException("Cannot cast " ~ type ~ " to " ~ to!(string)(typeid(size_t)));
             }
@@ -393,6 +399,27 @@ unittest
     //Stream should have been used up, verify
     assert(stream.length == 0);
     assert(parseResponse(stream).type == ResponseType.Invalid);
+
+    //Int overflow checking
+    stream = cast(byte[])":9223372036854775807\r\n";
+    try{
+        parseResponse(stream);
+        assert(false, "Tried to convert long.max to int");
+    }
+    catch(ConvOverflowException e)
+    {
+        assert(true);
+    }
+    
+    Response r = {type : ResponseType.Bulk, value : "9223372036854775807"};
+    try{
+        r.toInt();
+        assert(false, "Tried to convert long.max to int");
+    }
+    catch(ConvOverflowException e)
+    {
+        assert(true);
+    }
 
     stream = cast(byte[])"*0\r\n";
     response = parseResponse(stream);
