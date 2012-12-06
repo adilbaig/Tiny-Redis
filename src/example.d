@@ -112,6 +112,8 @@ void main()
     r = redis.send("SMEMBERS buddies");
     foreach(k, v; r.values)
         writeln(k, ") ", v);
+    foreach(k, v; r) //Response is loaded with opApply, you can iterate directly too.
+        writeln(k, ") ", v);
     
     
     try{

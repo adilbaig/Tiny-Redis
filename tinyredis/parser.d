@@ -66,25 +66,16 @@ public :
             return (type != ResponseType.Invalid);
         }
         
-        /** Foreach iteration primitives START **/
-        
-        @property bool empty() 
+        int opApply(int delegate(ulong k, Response value) dg)
         {
-            return (!isArray() || values.length < 1);
+            if(!isArray())
+                return 1;
+                
+            foreach(k, v ; values)
+                dg(k, values[k]);
+            
+            return 0;
         }
-        
-        private ulong _ctr = 0;
-        @property ref Response front() 
-        {
-            return values[_ctr];
-        }
-        
-        @property void popFront() 
-        {
-            _ctr++;
-        }
-        
-        /** Foreach iteration primitives END **/
         
         T opCast(T)()
         if(is(T == bool)
