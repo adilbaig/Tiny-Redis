@@ -31,6 +31,61 @@ public :
             Response[] values;
         }
         
+        bool isString()
+        {
+            return (type == ResponseType.Bulk);
+        }
+        
+        bool isInt()
+        {
+            return (type == ResponseType.Integer);
+        }
+        
+        bool isArray()
+        {
+            return (type == ResponseType.MultiBulk);
+        }
+        
+        bool isError()
+        {
+            return (type == ResponseType.Error);
+        }
+        
+        bool isNil()
+        {
+            return (type == ResponseType.Nil);
+        }
+        
+        bool isStatus()
+        {
+            return (type == ResponseType.Status);
+        }
+        
+        bool isValid()
+        {
+            return (type != ResponseType.Invalid);
+        }
+        
+        /** Foreach iteration primitives START **/
+        
+        @property bool empty() 
+        {
+            return (!isArray() || values.length < 1);
+        }
+        
+        private ulong _ctr = 0;
+        @property ref Response front() 
+        {
+            return values[_ctr];
+        }
+        
+        @property void popFront() 
+        {
+            _ctr++;
+        }
+        
+        /** Foreach iteration primitives END **/
+        
         T opCast(T)()
         if(is(T == bool)
                 || is(T == int)

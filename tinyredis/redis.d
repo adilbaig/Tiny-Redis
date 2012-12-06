@@ -66,6 +66,29 @@ public :
             
             return conn.request(app.data);
         }
+        
+        /**
+         * Execute the following commands in between a MULTI/EXEC block.
+         * 
+         * @param justResults - By default only the results of a transaction are returned. 
+         *   If true, the results of each queuing step is also returned. 
+         */
+        Response[] transaction(const string[] commands, bool all = false)
+        {
+            auto cmd = ["MULTI"];
+            cmd ~= commands;
+            cmd ~= "EXEC";
+            auto rez = pipeline(cmd);
+            
+            if(all)
+                return rez;
+            
+            auto resp = rez[$ - 1];
+            if(resp.isError())
+                throw new RedisResponseException(resp.value);
+                
+            return rez[$ - 1].values;
+        }
     }
    
 unittest
