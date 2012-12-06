@@ -383,6 +383,12 @@ unittest
     assert(response.type == ResponseType.Status);
     assert(response.value == "A Status Message");
     assert(cast(string)response == "A Status Message");
+    try{
+        cast(int)response;
+    }catch(RedisCastException e)
+    {
+        //Exception caught
+    }
 
     //Stream should have been used up, verify
     assert(stream.length == 0);
@@ -402,7 +408,24 @@ unittest
     {
         assert(true);
     }
+    
+    //Testing opApply
+    stream = cast(byte[])"*0\r\n";
+    response = parseResponse(stream);
+    foreach(k,v; response)
+        assert(false, "opApply is broken");
+    
+    stream = cast(byte[])"$2\r\n$2\r\n";
+    response = parseResponse(stream);
+    foreach(k,v; response)
+        assert(false, "opApply is broken");
+        
+    stream = cast(byte[])":1000\r\n";
+    response = parseResponse(stream);
+    foreach(k,v; response)
+        assert(false, "opApply is broken");
 
+    //Testing encode
     assert(encode("SREM", ["myset", "$3", "$4"]) == encode("SREM myset $3 $4"));
     assert(encode("SREM", "myset", "$3", "$4")   == encode("SREM myset $3 $4"));
     assert(encode("TTL", "myset")   == encode("TTL myset"));
