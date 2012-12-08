@@ -47,25 +47,28 @@ writeln("The name's ", redis.send("GET name")) //The name's Adil
 <h2>Documentation</h2>
 <p>Tiny Redis has a very shallow learning curve (like most redis drivers). You learn best by using it. Documentation is included explaining the API, accessing results and usage examples.</p>
 <ul>
-	<li>Primary documentation is in the <a href="https://github.com/adilbaig/Tiny-Redis/wiki/Tiny-Redis">Wiki</a></li>
-	<li>See <a href="https://github.com/adilbaig/Tiny-Redis/blob/master/src/example.d">example.d</a> for a variety of examples in calling commands, pipelining, doing transactions and handling/printing/iterating over results.</li>
-	<li>You may also want to check out the unittests in <a href="https://github.com/adilbaig/Tiny-Redis/blob/master/tinyredis/">tinyredis/*</a> </li>
+	<li><b><a href="https://github.com/adilbaig/Tiny-Redis/wiki/Tiny-Redis">Primary documentation is on the Wiki</a></b></li>
+	<li><b><a href="https://github.com/adilbaig/Tiny-Redis/blob/master/src/example.d">Example.d</a></b> - This file is included in the source download. It gives an overview of a variety of examples of calling commands, pipelining, doing transactions and handling/printing/iterating over results.</li>
+	<li>You may also want to check out the unit tests in <a href="https://github.com/adilbaig/Tiny-Redis/blob/master/tinyredis/">tinyredis/*</a> </li>
 </ul>
+
+<h2>Benchmarks</h2>
+<p>Coming soon .. </p>
 
 <h2>Compilation Instructions</h2>
 
 <h4>Static library</h4>
 <p>Download the shared static library for Linux and compile it with your source files. Ex:</p>
-<pre><code>dmd YOUR_SOURCE.d tinyredis.a</code></pre>
-<p>For Linux x64, use the 64 bit library</p>
-<pre><code>dmd YOUR_SOURCE.d tinyredis_x64.a</code></pre>
+<pre><code>dmd YOUR_SOURCE.d libtinyredis.a</code></pre>
+<p>For Linux x64, use the 64 bit version</p>
+<pre><code>dmd YOUR_SOURCE.d libtinyredis_x64.a</code></pre>
 
 <h4>Source</h4>
-<p>Download the source code and compile <b>tinyredis/*</b> with your source files. Works on all platforms. Ex:</p>
+<p>Download the source code and compile <b>tinyredis/*</b> with your source files. Works on all platforms. This is recommended if you're new to TinyRedis. Ex:</p>
 <pre><code>dmd YOUR_SOURCE.d tinyredis/*</code></pre>
 
 <h2>Other programs</h2>
-<p>There are few more programs included in the package as described below. Before running any of them ensure you have the Redis server running on "localhost" on port 6379 (those are the default Redis settings)</p>
+<p>There are few more programs included in the package as described below. Before running any of them, ensure you have the Redis server running on "localhost:6379" (those are the default Redis settings)</p>
 
 <h4>The Example Program</h4>
 <p>This program is most useful when read as source. It shows the various ways to use Tiny Redis. Run :</p>
@@ -76,7 +79,7 @@ writeln("The name's ", redis.send("GET name")) //The name's Adil
 <p>The interactive console works like redis-cli. It is meant to show the simplicity of the driver, and is not a replacement for redis-cli. Run :</p>
 <pre><code>make console</code></pre>
 
-<h4>Benchmarking Program</h4>
+<h4>The Benchmarking Program</h4>
 <p>A simple benchmark is included. To see how redis performs on your PC/Server, run :</p>
 <pre><code>make benchmark</code></pre>
 
@@ -94,7 +97,7 @@ writeln("The name's ", redis.send("GET name")) //The name's Adil
 </ul>
 
 <h2>Support and Feedback</h2>
-<p>For feedback, bug reports or feature requests create a <a href="https://github.com/adilbaig/Tiny-Redis/issues">support ticket</a> on github. Feel free to suggest code improvements, new features and anything else. Thanks! </p>
+<p>For feedback, bug reports or feature requests create a <b><a href="https://github.com/adilbaig/Tiny-Redis/issues">support ticket</a></b> on github. Feel free to suggest code improvements, new features or anything else. Thanks! </p>
 
 <p>Adil Baig
 <br>Blog : <a href="http://adilbaig.posterous.com">adilbaig.posterous.com</a>
