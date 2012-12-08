@@ -120,7 +120,7 @@ public :
             switch(type)
             {
                 case ResponseType.Integer : 
-                    if(intval < T.max)
+                    if(intval <= T.max)
                         return cast(T)intval;
                     else
                         throw new ConvOverflowException("Cannot convert " ~ to!string(intval) ~ " to " ~ to!(string)(typeid(T)));
