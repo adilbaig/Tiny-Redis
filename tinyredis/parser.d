@@ -27,7 +27,7 @@ public :
         
         union{
             string value;
-            int intval;
+            long intval;
             Response[] values;
         }
         
@@ -79,13 +79,16 @@ public :
         
         T opCast(T)()
         if(is(T == bool)
+                || is(T == byte)
+                || is(T == short)
                 || is(T == int)
+                || is(T == long)
                 || is(T == string))
         {
             static if(is(T == bool))
                 return toBool();
-            else static if(is(T == int))
-                return toInt();
+            else static if(is(T == byte) || is(T == short) || is(T == int) || is(T == long))
+                return toInt!(T)();
             else static if(is(T == string))
                 return toString();
         }
@@ -111,24 +114,28 @@ public :
             }
         }
         
-        @property @trusted int toInt()
+        @property @trusted T toInt(T = int)()
+        if(is(T == byte) || is(T == short) || is(T == int) || is(T == long))
         {
             switch(type)
             {
                 case ResponseType.Integer : 
-                    return intval;
+                    if(intval < T.max)
+                        return cast(T)intval;
+                    else
+                        throw new ConvOverflowException("Cannot convert " ~ to!string(intval) ~ " to " ~ to!(string)(typeid(T)));
                     
                 case ResponseType.Bulk : 
                 try{
-                    return to!(int)(value);
+                    return to!(T)(value);
                 }catch(ConvOverflowException e)
                 {
-                    e.msg = "Cannot convert " ~ value ~ " to int";
+                    e.msg = "Cannot convert " ~ value ~ " to " ~ to!(string)(typeid(T));
                     throw e;
                 }
                 
                 default:
-                    throw new RedisCastException("Cannot cast " ~ type ~ " to " ~ to!(string)(typeid(size_t)));
+                    throw new RedisCastException("Cannot cast " ~ type ~ " to " ~ to!(string)(typeid(T)));
             }
         }
         
@@ -223,7 +230,7 @@ public :
                 
             case ':' :
                 response.type = ResponseType.Integer;
-                response.intval = to!int(cast(char[])bytes);
+                response.intval = to!long(cast(char[])bytes);
                 break;
                 
             case '$' :
@@ -400,27 +407,27 @@ unittest
     assert(stream.length == 0);
     assert(parseResponse(stream).type == ResponseType.Invalid);
 
-    //Int overflow checking
-    stream = cast(byte[])":9223372036854775807\r\n";
+    //Long overflow checking
+    stream = cast(byte[])":9223372036854775808\r\n";
     try{
         parseResponse(stream);
-        assert(false, "Tried to convert long.max to int");
+        assert(false, "Tried to convert long.max+1 to long");
     }
-    catch(ConvOverflowException e)
-    {
-        assert(true);
-    }
+    catch(ConvOverflowException e){}
     
     Response r = {type : ResponseType.Bulk, value : "9223372036854775807"};
     try{
-        r.toInt();
+        r.toInt(); //Default int
         assert(false, "Tried to convert long.max to int");
     }
-    catch(ConvOverflowException e)
-    {
-        assert(true);
-    }
-
+    catch(ConvOverflowException e){}
+    
+    r.value = "127";
+    r.toInt!byte(); 
+    r.toInt!short(); 
+    r.toInt!int(); 
+    r.toInt!long(); 
+    
     stream = cast(byte[])"*0\r\n";
     response = parseResponse(stream);
     assert(response.count == 0);

@@ -98,11 +98,10 @@ void main()
     string t = redis.send!(string)("GET tinyredis");
     bool b   = redis.send!(bool)("EXISTS tinyredis");
     
-    // This will also cast the value from strings if possible
+    // send can also cast the value from a string, if possible
     redis.send("SET amount 30");
-    int amount = redis.send!(int)("GET amount");
     if(redis.send!(bool)("GET amount"))
-        writeln("amount is greater than zero ", amount);
+        writeln("amount is greater than zero ", redis.send!(int)("GET amount"));
     
     
     /*
