@@ -423,5 +423,6 @@ footer {
 }
 
 /* ADIL */
+header { width : 200px; }
 header p { rgba(255, 255, 255, 0.85); }
 section li a { font-weight: bold; }
