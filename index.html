@@ -17,7 +17,7 @@
     <div class="wrapper">
       <header>
         <h1 class="header">Tiny Redis</h1>
-        <p class="header">Fast, Simple, Unit-Tested. Redis driver for <a href="http://www.dlang.org">D</a></p>
+        <p class="header">Fast, Simple, Unit Tested. Redis driver for <a href="http://www.dlang.org">D</a></p>
         <p>Latest Version : 1.2</p>
 
         <ul>
@@ -32,10 +32,45 @@
       <section>
         <h1>Introduction</h1>
 
-<p>Tiny Redis is a Redis driver for the <a href="http://www.dlang.org">D programming language</a>. It is intentionally minimal, fast, simple, intuitive, feature complete, unit-tested, forward compatible, has no dependencies and makes working with Redis trivial.</p>
-<p>It supports all of Redis's data types; keys, hashes, lists and sets. It also has functions for <b>pipelining</b> and <b>transactions</b>.</p>
+<p>Tiny Redis is a Redis driver for the <a href="http://www.dlang.org">D programming language</a>. It is intentionally minimal, fast, simple, intuitive, clean, unit tested, forward compatible, has no dependencies and makes working with Redis trivial.</p>
+<p>It supports all of Redis's data types; <a href="http://redis.io/commands#generic">keys</a>, 
+<a href="http://redis.io/commands#hash">hashes</a>,
+<a href="http://redis.io/commands#list">lists</a> and
+<a href="http://redis.io/commands#set">sets</a>. It also has functions for <a href="http://redis.io/topics/pipelining">pipelining</a> and <a href="http://redis.io/topics/transactions">transactions</a>.</p>
+
+<h2>Tiny Redis is ..</h2>
+
+<h4>intentionally minimal</h4>
+<p>This minimizes the ramp-up time from learning the library to writing your application specific code. With TinyRedis you leverage your knowledge of Redis commands transparently. This also makes it simpler to build libraries on top of it.</p>
+
+<h4>fast</h4>
+<p>simple local benchmarking suggests TinyRedis can do 13,000 requests/second. With pipelining the numbers are orders of magnitudes higher. In practice, TinyRedis is fast enough to handle most real-world volumes. Watch the benchmarking space below.</p>
+
+<h4>simple</h4>
+<p>You can run any Redis command using one simple call : </p>
+<pre><code>Response response = redis.send(string)</code></pre>
+<p>That's it. All the other features reduce (more or less) boiler-plate from your code.</p>
+
+<h4>intuitive</h4>
+<p>By leveraging D's magic op* functions, TinyRedis aims to do what you expect.</p>
+
+<h4>clean</h4>
+<p>The encoder is separate from the parser, which is separate from the driver. In theory, this means we can more backends easily or even use them in other projects.</p>
+
+<h4>unit tested</h4>
+<p>The parser and the driver have unit tests that ship with source.</p>
+
+<h4>forward compatible</h4>
+<p>Due to Tiny Redis' minimalist approach, any new commands introduced by Redis will feel natural with Tiny Redis (as long as the protocol remains intact).</p>
+
+<h4>has no dependencies</h4>
+<p>A modern D2 dmd compiler is all you need.</p>
+
+<h4>makes working with Redis trivial.</h4>
+<p>Nuff said. Instructions are below.</p>
 
 <h2>Quick Example</h2>
+<p>Without further ado : </p>
 <pre><code>import tinyredis.redis; 
 
 auto redis = new Redis("localhost", 6379);
@@ -45,7 +80,7 @@ writeln("The name's ", redis.send("GET name")) //The name's Adil
 </code></pre>
 
 <h2>Documentation</h2>
-<p>Tiny Redis has a very shallow learning curve (like most redis drivers). You learn best by using it. Documentation is included explaining the API, accessing results and usage examples.</p>
+<p>Tiny Redis has a very shallow learning curve. You learn best by using it. The following links should help you get started.</p>
 <ul>
 	<li><a href="https://github.com/adilbaig/Tiny-Redis/wiki/Tiny-Redis">Primary documentation is on the Wiki</a></li>
 	<li><a href="https://github.com/adilbaig/Tiny-Redis/blob/master/src/example.d">Example.d</a> - This file is included in the source download. It gives an overview of a variety of examples of calling commands, pipelining, doing transactions and handling/printing/iterating over results.</li>
@@ -68,7 +103,7 @@ writeln("The name's ", redis.send("GET name")) //The name's Adil
 <pre><code>dmd YOUR_SOURCE.d tinyredis/*</code></pre>
 
 <h2>Other programs</h2>
-<p>There are few more programs included in the package as described below. Before running any of them, ensure you have the Redis server running on "localhost:6379" (those are the default Redis settings)</p>
+<p>There are a few more programs included in the package as described below. Before running any of them, ensure you have the Redis server running on "localhost:6379" (those are the default Redis settings)</p>
 
 <h4>The Example Program</h4>
 <p>This program is most useful when read as source. It shows the various ways to use Tiny Redis. Run :</p>
@@ -93,7 +128,7 @@ writeln("The name's ", redis.send("GET name")) //The name's Adil
 <ul>
 <li>Lua Scripting has not been tested yet.</li>
 <li>Pub/Sub and the "monitor" command need special support. Not done yet.</li>
-<li>Supports D2 only</li>
+<li>Supports D2 only.</li>
 </ul>
 
 <h2>Support and Feedback</h2>
