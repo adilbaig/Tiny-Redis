@@ -120,6 +120,7 @@ unittest
     assert(r.type == ResponseType.MultiBulk);
     assert(r.values.length == 6);
     
+    //Check pipeline
     redis.send("DEL ctr");
     auto responses = redis.pipeline(["SET ctr 1", "INCR ctr", "INCR ctr", "INCR ctr", "INCR ctr"]);
     
@@ -129,4 +130,24 @@ unittest
     assert(responses[2].intval == 3);
     assert(responses[3].intval == 4);
     assert(responses[4].intval == 5);
+    
+    //Check transaction
+    redis.send("DEL ctr");
+    responses = redis.transaction(["SET ctr 1", "INCR ctr", "INCR ctr"], true);
+    assert(responses.length == 5);
+    assert(responses[0].type == ResponseType.Status);
+    assert(responses[1].type == ResponseType.Status);
+    assert(responses[2].type == ResponseType.Status);
+    assert(responses[3].type == ResponseType.Status);
+    assert(responses[4].type == ResponseType.MultiBulk);
+    assert(responses[4].values[0].type == ResponseType.Status);
+    assert(responses[4].values[1].intval == 2);
+    assert(responses[4].values[2].intval == 3);
+    
+    redis.send("DEL ctr");
+    responses = redis.transaction(["SET ctr 1", "INCR ctr", "INCR ctr"]);
+    assert(responses.length == 3);
+    assert(responses[0].type == ResponseType.Status);
+    assert(responses[1].intval == 2);
+    assert(responses[2].intval == 3);
 }
