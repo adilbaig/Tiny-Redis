@@ -41,13 +41,13 @@
 <h2>Tiny Redis is ..</h2>
 
 <h4>intentionally minimal</h4>
-<p>This minimizes the ramp-up time from learning the library to writing your application specific code. With TinyRedis you leverage your knowledge of Redis commands transparently. This also makes it simpler to build libraries on top of it.</p>
+<p>With TinyRedis you leverage your knowledge of Redis commands transparently. This minimizes the ramp-up time from learning the library to writing your application specific code. It's also simpler to build libraries on top of it.</p>
 
 <h4>fast</h4>
 <p>simple local benchmarking suggests TinyRedis can do 13,000 requests/second. With pipelining the numbers are orders of magnitudes higher. In practice, TinyRedis is fast enough to handle most real-world volumes. Watch the benchmarking space below.</p>
 
 <h4>simple</h4>
-<p>You can run any Redis command using one simple call : </p>
+<p>Run any Redis command using one simple call : </p>
 <pre><code>Response response = redis.send(string)</code></pre>
 <p>That's it. All the other features reduce (more or less) boiler-plate from your code.</p>
 
@@ -55,13 +55,13 @@
 <p>By leveraging D's magic op* functions, TinyRedis aims to do what you expect.</p>
 
 <h4>clean</h4>
-<p>The encoder is separate from the parser, which is separate from the driver. In theory, this means we can more backends easily or even use them in other projects.</p>
+<p>The encoder is separate from the parser, which is separate from the driver. In theory, we can mix and match and possibly introduce more backends easily.</p>
 
 <h4>unit tested</h4>
 <p>The parser and the driver have unit tests that ship with source.</p>
 
 <h4>forward compatible</h4>
-<p>Due to Tiny Redis' minimalist approach, any new commands introduced by Redis will feel natural with Tiny Redis (as long as the protocol remains intact).</p>
+<p>Due to Tiny Redis' minimalist approach, any new commands introduced by Redis can be queried using the same API (as long as the protocol remains intact).</p>
 
 <h4>has no dependencies</h4>
 <p>A modern D2 dmd compiler is all you need.</p>
@@ -106,7 +106,7 @@ writeln("The name's ", redis.send("GET name")) //The name's Adil
 <p>There are a few more programs included in the package as described below. Before running any of them, ensure you have the Redis server running on "localhost:6379" (those are the default Redis settings)</p>
 
 <h4>The Example Program</h4>
-<p>This program is most useful when read as source. It shows the various ways to use Tiny Redis. Run :</p>
+<p>This program is most useful when read as source. It demonstrates the API. Run :</p>
 <pre><code>make example</code></pre>
 <p>The output is not interesting, look at the code.</p>
 
