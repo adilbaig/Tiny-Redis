@@ -14,12 +14,14 @@ void main()
     write("redis > "); 
     while (stdin.readln(buf))
     {
-        if(buf[0 .. $-1] == "exit") 
+        string cmd = cast(string)buf[0 .. $-1];
+        
+        if(cmd == "exit") 
             return;
         
-        if(buf.length > 0)
+        if(cmd.length > 0)
             try{
-                auto resp = redis.send(cast(string)buf);
+                auto resp = redis.send(cmd);
                 writeln(resp.toDiagnosticString());
                 
             }catch(RedisResponseException e)

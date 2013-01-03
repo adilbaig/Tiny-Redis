@@ -27,7 +27,7 @@ public :
          * send("SADD", "myset", 1.2)
          * send("SADD", "myset", true)
          * send("SADD", "myset", "Batman")
-         * send("SADD", "myset", object) //provided toString is implemented
+         * send("SADD", "myset", object) //provided 'object' implements toString()
          * send("GET", "*") == send("GET *")
          */
         R send(R = Response, T...)(string key, T args)
