@@ -2,6 +2,7 @@ module tinyredis.parser;
 
 private:
     import std.array : split, replace, join;
+    import std.string : strip;
     import std.stdio : writeln;
     import std.conv  : to, text, ConvOverflowException;
     
@@ -316,7 +317,37 @@ public :
     
     @trusted string toMultiBulk(string command)
     {
-        string[] cmds = command.split();
+        command = strip(command);
+        
+        string[] cmds;
+        char[] buffer;
+        
+        uint i = 0;
+        while(i < command.length)
+        {
+            auto c = command[i++];
+            
+            if(c == '"')
+            {
+                while(i < command.length)
+                {
+                    auto c1 = command[i++];
+                    if(c1 == '"')
+                        break;
+                    buffer ~= c1;
+                }
+            }
+            else if(c == ' ')
+            {
+                cmds ~= cast(string)buffer;
+                buffer.length = 0;
+            }
+            else
+                buffer ~= c;
+        }
+        
+        cmds ~= cast(string)buffer;
+        
         char[] res = "*" ~ to!(char[])(cmds.length) ~ CRLF;
         foreach(cmd; cmds)
             res ~= toBulk(cmd);
@@ -368,6 +399,10 @@ unittest
 {
     assert(toBulk("$2") == "$2\r\n$2\r\n");
     assert(toMultiBulk("GET *") == "*2\r\n$3\r\nGET\r\n$1\r\n*\r\n");
+    
+    auto lua = "return redis.call('set','foo','bar')";
+    assert(toMultiBulk("EVAL \"" ~ lua ~ "\" 0") == "*3\r\n$4\r\nEVAL\r\n$"~to!(string)(lua.length)~"\r\n"~lua~"\r\n$1\r\n0\r\n");
+    assert(toMultiBulk("\"" ~ lua ~ "\" \"" ~ lua ~ "\" ") == "*2\r\n$"~to!(string)(lua.length)~"\r\n"~lua~"\r\n$"~to!(string)(lua.length)~"\r\n"~lua~"\r\n");
     
     byte[] stream = cast(byte[])"*4\r\n$3\r\nGET\r\n$1\r\n*\r\n:123\r\n+A Status Message\r\n";
     
