@@ -8,6 +8,12 @@ Read more : [adilbaig.github.com/Tiny-Redis](http://adilbaig.github.com/Tiny-Red
 
 Changelog
 ---------
+
+v1.2.1 (2012-12-09)
+-----------------
+- improved encoder. EVAL works!
+- improved documentation per DDOC
+
 v1.2 (2012-12-09)
 - Response struct now supports opCast. Casts to bool, byte, short, int, long & string.
 - send template now allow's casting of Response based on Response.type.

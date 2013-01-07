@@ -1,7 +1,7 @@
 Changelog
 =========
 
-v1.2.1 (2012-12-09)
+v1.2.1 (2013-01-08)
 -----------------
 - improved encoder. EVAL works!
 - improved documentation per DDOC
