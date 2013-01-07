@@ -21,6 +21,14 @@ public :
         Nil
     }
     
+    /**
+     * The Response struct represents returned data from Redis. 
+     *
+     * Stores values true to form. Allows user code to query, cast, iterate, print, and log strings, ints, errors and all other return types.
+     * 
+     * The role of the Response struct is to make it simple, yet accurate to retrieve returned values from Redis. To aid this
+     * it implements D op* functions as well as little helper methods that simplify user facing code. 
+     */
     struct Response
     {
         ResponseType type;
@@ -78,6 +86,9 @@ public :
             return 0;
         }
         
+        /**
+         * Allows casting a Response to an integral, bool or string
+         */
         T opCast(T)()
         if(is(T == bool)
                 || is(T == byte)
@@ -94,6 +105,11 @@ public :
                 return toString();
         }
         
+        /**
+         * Attempts to check for truthiness of a Response.
+         * 
+         * Returns false on failure.
+         */
         @property @trusted bool toBool()
         {
             switch(type)
@@ -115,6 +131,13 @@ public :
             }
         }
         
+        /**
+         * Converts a Response to an integral (byte to long)
+         *
+         * Only works with ResponseType.Integer and ResponseType.Bulk
+         *
+         * Throws : ConvOverflowException, RedisCastException
+         */
         @property @trusted T toInt(T = int)()
         if(is(T == byte) || is(T == short) || is(T == int) || is(T == long))
         {
@@ -140,6 +163,9 @@ public :
             }
         }
         
+        /**
+         * Returns the value of this Response as a string
+         */
         @property @trusted string toString()
         {
             switch(type)
@@ -160,6 +186,9 @@ public :
             }
         }
         
+        /**
+         * Returns the value of this Response as a string, along with type information
+         */
         @property @trusted string toDiagnosticString()
         {
             final switch(type)
@@ -194,8 +223,10 @@ public :
     }
 
     /**
-     * Parse a byte stream into a response. If successful remove that chunk from "mb" and return Response.
-     * On failure returns a ResponseType.Invalid Response and does not modify "mb" 
+     * Parse a byte stream into a Response struct. 
+     *
+     * The parser works to identify a minimum complete Response. If successful, it removes that chunk from "mb" and returns a Response struct.
+     * On failure it returns a ResponseType.Invalid Response and leaves "mb" untouched. 
      */
     @trusted Response parseResponse(ref byte[] mb)
     {
@@ -279,12 +310,15 @@ public :
     /**
      * Encodes a request to a MultiBulk using any type that can be converted to a string
      *
+     * Examples:
+     * ---
      * encode("SADD", "myset", 1)
      * encode("SADD", "myset", 1.2)
      * encode("SADD", "myset", true)
      * encode("SADD", "myset", "Batman")
      * encode("SADD", "myset", object) //provided toString is implemented
-     * encode("GET", "*") == encode("GET *")
+     * encode("GET", "*") == encode("GET *") == encode("GET", ["*"])
+     * ---
      */
     @trusted string encode(T...)(string key, T args)
     {
@@ -300,7 +334,10 @@ public :
     /**
      * Encode a request of a parametrized array
      *
-     * encode("SREM", ["myset", "$3", "$4"])
+     * Examples:
+     * ---
+     * encode("SREM", ["myset", "$3", "$4"]) == encode("SREM myset $3 $4") == encode("SREM", "myset", "$3", "$4")
+     * ---
      */
     @trusted string encode(T)(string key, T[] args)
     {
@@ -315,6 +352,11 @@ public :
         return toMultiBulk(request);
     }
     
+    /**
+     * Encodes a string to MultiBulk format
+     *
+     * Use encode instead
+     */
     @trusted string toMultiBulk(string command)
     {
         command = strip(command);

@@ -7,12 +7,29 @@ private:
     import tinyredis.parser;
     
 
+    /**
+     * Class to communicate with Redis
+     *
+     * Creates a socket connection to Redis. Each call blocks until a response is received.
+     * This class does not handle encoding. Use it to send raw MultiBulk encoded strings
+     *
+     */
     class RedisConnection
     {
         private :
             Socket conn;
         
         public :
+        
+            /**
+            * Connect to a Redis server
+            *
+            * Example:
+            *
+            * ---
+            * new RedisConnection("localhost", 6379);
+            * ---
+            */
             this(string host, ushort port)
             {
                 conn = new TcpSocket(new InternetAddress(host, port));
@@ -30,16 +47,26 @@ private:
             }
             
             /**
-             * Send a raw, redis encoded, command to the server and read the response
+             * Send a raw, redis encoded, command to the server and read the response(s).
              *
-             * request(encode("GET", "*"));
-             * request("*2\r\n$3\r\nGET\r\n$1\r\n*\r\n"); 
+             * Examples:
+             *
+             * ---
+             * Response[] responses = request(encode("GET", "*"));
+             * for(r; responses)
+             *      writeln(r);
+             *
+             * //Same as above, but with a Multibulk encoded string
+             * Response[] responses = request("*2\r\n$3\r\nGET\r\n$1\r\n*\r\n");
+             * for(r; responses)
+             *      writeln(r);
+             * 
+             * //The following is an example of "pipelining" commands
              * request(encode("SET ctr 1") 
                         ~ encode("INCR ctr")
-                        ~ encode("INCR ctr")
-                        ~ encode("INCR ctr")
                         ~ encode("INCR ctr") 
-                        ); //Pipelining. Same as pipeline(["SET ctr 1", "INCR ctr", "INCR ctr", "INCR ctr", "INCR ctr"])
+                        ); //Same as Redis.pipeline(["SET ctr 1", "INCR ctr", "INCR ctr"])
+             * ---
              */
             Response[] request(string command)
             in { assert(command.length > 0); }
