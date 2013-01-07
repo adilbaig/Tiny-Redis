@@ -15,20 +15,27 @@ public :
         
         public:
         
+        /**
+         * Create a new connection to the Redis server
+         */
         this(string host = "127.0.0.1", ushort port = 6379)
         {
             conn = new RedisConnection(host, port);
         }
         
         /**
-         * Send a request using any type that can be converted to a string
+         * Call Redis using any type T that can be converted to a string
          *
+         * Examples:
+         *
+         * ---
          * send("SADD", "myset", 1)
          * send("SADD", "myset", 1.2)
          * send("SADD", "myset", true)
          * send("SADD", "myset", "Batman")
          * send("SADD", "myset", object) //provided 'object' implements toString()
          * send("GET", "*") == send("GET *")
+         * ---
          */
         R send(R = Response, T...)(string key, T args)
         {
@@ -36,9 +43,13 @@ public :
         }
         
         /**
-         * Send a request with a parameterized array. Ex:
+         * Call Redis using with a parameterized array T[]. 
          *
+         * Examples:
+         *
+         * ---
          * send("SREM", ["myset", "$3", "$4"]) == send("SREM myset $3 $4")
+         * ---
          */
         R send(R = Response, T)(string key, T[] args)
         {
@@ -47,6 +58,13 @@ public :
         
         /**
          * Send a redis-encoded string. It can be one or more commands concatenated together
+         *
+         * Examples:
+         *
+         * ---
+         * sendRaw(encode("GET NAME"));
+         * sendRaw(encode("SET ctr 1") ~ encode("INCR ctr") ~ encode("INCR ctr"))); //This is raw pipelining
+         * ---
          */
         Response[] sendRaw(string command)
         {
@@ -56,7 +74,11 @@ public :
         /**
          * Send a series of commands as a pipeline
          *
-         * pipeline(["SET ctr 1", "INCR ctr", "INCR ctr", "INCR ctr", "INCR ctr"])
+         * Examples:
+         *
+         * ---
+         * pipeline(["SADD shopping_cart Shirt", "SADD shopping_cart Pant", "SADD shopping_cart Boots"])
+         * ---
          */
         Response[] pipeline(const string[] commands)
         {
@@ -68,10 +90,16 @@ public :
         }
         
         /**
-         * Execute the following commands in between a MULTI/EXEC block.
+         * Execute commands in a MULTI/EXEC block.
          * 
-         * @param justResults - By default only the results of a transaction are returned. 
-         *   If true, the results of each queuing step is also returned. 
+         * Params: 
+         * justResults = By default, only the results of a transaction are returned. If "true, the results of each queuing step is also returned. 
+         *
+         * Examples:
+         *
+         * ---
+         * transaction(["SADD shopping_cart Shirt", "INCR shopping_cart_ctr"])
+         * ---
          */
         Response[] transaction(const string[] commands, bool all = false)
         {
