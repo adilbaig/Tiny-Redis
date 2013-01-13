@@ -18,12 +18,12 @@
       <header>
         <h1 class="header">Tiny Redis</h1>
         <p class="header">Fast, Simple, Unit Tested. Redis driver for <a href="http://www.dlang.org">D</a></p>
-        <p>Latest Version : 1.2</p>
+        <p>Latest Version : 1.2.1</p>
 
         <ul>
-          <li class="download"><a class="buttons" href="https://github.com/downloads/adilbaig/Tiny-Redis/libtinyredis.a">Linux - Static library</a></li>
-          <li class="download"><a class="buttons" href="https://github.com/downloads/adilbaig/Tiny-Redis/libtinyredis_x64.a">Linux x64 - Static library</a></li>
-          <li class="download"><a class="buttons" href="https://github.com/downloads/adilbaig/Tiny-Redis/TinyRedis_1.2.tgz">All platforms - Source, examples, benchmark</a></li>
+          <!-- <li class="download"><a class="buttons" href="https://github.com/downloads/adilbaig/Tiny-Redis/libtinyredis.a">Linux - Static library</a></li>
+          <li class="download"><a class="buttons" href="https://github.com/downloads/adilbaig/Tiny-Redis/libtinyredis_x64.a">Linux x64 - Static library</a></li> -->
+          <li class="download"><a class="buttons" href="https://github.com/adilbaig/Tiny-Redis/archive/master.zip">All platforms - Source, examples, benchmark</a></li>
           <li><a class="buttons github" href="https://github.com/adilbaig/Tiny-Redis">View On GitHub</a></li>
         </ul>
 
@@ -41,7 +41,7 @@
 <h2>Tiny Redis is ..</h2>
 
 <h4>intentionally minimal</h4>
-<p>With TinyRedis you leverage your knowledge of Redis commands transparently. This minimizes the ramp-up time from learning the library to writing your application specific code. It's also simpler to build libraries on top of it.</p>
+<p>With Tiny Redis you leverage your knowledge of Redis commands transparently. This minimizes the ramp-up time from learning the library to writing your application specific code. It's also simpler to build libraries on top of it.</p>
 
 <h4>fast</h4>
 <p>simple local benchmarking suggests TinyRedis can do 13,000 requests/second. With pipelining the numbers are orders of magnitudes higher. In practice, TinyRedis is fast enough to handle most real-world volumes. Watch the benchmarking space below.</p>
@@ -82,7 +82,8 @@ writeln("The name's ", redis.send("GET name")) //The name's Adil
 <h2>Documentation</h2>
 <p>Tiny Redis has a very shallow learning curve. You learn best by using it. The following links should help you get started.</p>
 <ul>
-	<li><a href="https://github.com/adilbaig/Tiny-Redis/wiki/Tiny-Redis">Primary documentation is on the Wiki</a></li>
+	<li><a href="https://github.com/adilbaig/Tiny-Redis/blob/master/tinyredis/redis.d">Primary documentation is the source</a></li>
+	<li><a href="https://github.com/adilbaig/Tiny-Redis/wiki/Tiny-Redis">Wiki - Work in progress</a></li>
 	<li><a href="https://github.com/adilbaig/Tiny-Redis/blob/master/src/example.d">Example.d</a> - This file is included in the source download. It gives an overview of a variety of examples of calling commands, pipelining, doing transactions and handling/printing/iterating over results.</li>
 	<li>You may also want to check out the unit tests in <a href="https://github.com/adilbaig/Tiny-Redis/blob/master/tinyredis/">tinyredis/*</a> </li>
 </ul>
@@ -92,11 +93,11 @@ writeln("The name's ", redis.send("GET name")) //The name's Adil
 
 <h2>Compilation Instructions</h2>
 
-<h4>Static library</h4>
-<p>Download the shared static library for Linux and compile it with your source files. Ex:</p>
+<h4>Make a static library (Linux)</h4>
+<p>Download the source code and run `make`</p>
+<pre><code>make lib</code></pre>
+<p>Now, compile your source files using this library. Ex:</p>
 <pre><code>dmd YOUR_SOURCE.d libtinyredis.a</code></pre>
-<p>For Linux x64, use the 64 bit version</p>
-<pre><code>dmd YOUR_SOURCE.d libtinyredis_x64.a</code></pre>
 
 <h4>Source</h4>
 <p>Download the source code and compile <b>tinyredis/*</b> with your source files. Works on all platforms. This is recommended if you're new to TinyRedis. Ex:</p>
@@ -126,7 +127,6 @@ writeln("The name's ", redis.send("GET name")) //The name's Adil
 
 <h2>Limitations</h2>
 <ul>
-<li>Lua Scripting has not been tested yet.</li>
 <li>Pub/Sub and the "monitor" command need special support. Not done yet.</li>
 <li>Supports D2 only.</li>
 </ul>
