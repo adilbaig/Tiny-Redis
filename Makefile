@@ -11,7 +11,7 @@ benchmark:
 	rdmd src/benchmark.d $(LIB)
 	
 lib:
-	dmd -lib tinyredis/* -oftinyredis.a
+	dmd -lib tinyredis/* -oflibtinyredis.a
 	
 release:
 	dmd -lib -m32 tinyredis/* -ofdownloads/$(VERSION)/libtinyredis.a
