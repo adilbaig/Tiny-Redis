@@ -35,6 +35,9 @@ public :
          * send("SADD", "myset", "Batman")
          * send("SADD", "myset", object) //provided 'object' implements toString()
          * send("GET", "*") == send("GET *")
+         *
+         * //Lua scripts must enclose their script in \"
+         * send("EVAL", "\"return redis.call('set','lua','LUA')\"", 0); 
          * ---
          */
         R send(R = Response, T...)(string key, T args)
@@ -117,6 +120,35 @@ public :
                 
             return rez[$ - 1].values;
         }
+        
+        /**
+         * Execute a Lua script.
+         * 
+         * This template does not require any special escaped strings
+         *
+         * Examples:
+         *
+         * ---
+         * Response r = eval("return redis.call('set','lua','LUA_AGAIN')");
+         * r.value == "LUA_AGAIN";
+         * 
+         * Response r1 = redis.eval("return {KEYS[1],KEYS[2],ARGV[1],ARGV[2]}", ["key1", "key2"], ["first", "second"]);
+         * writeln(r1); // [key1, key2, first, second]
+         *
+         * Response r1 = redis.eval("return {KEYS[1],KEYS[2],ARGV[1],ARGV[2]}", [1, 2]);
+         * writeln(r1); // [1, 2]
+         * ---
+         */
+        Response eval(K = string, A = string)(string lua_script, K[] keys = [], A[] args = [])
+        {
+            string str;
+            foreach(k; keys)
+                str ~= k ~ " ";
+            foreach(k; args)
+                str ~= k ~ " ";
+                    
+            return send("EVAL", "\"" ~ lua_script ~ "\"", keys.length, str);
+        }
     }
    
 unittest
@@ -178,4 +210,22 @@ unittest
     assert(responses[0].type == ResponseType.Status);
     assert(responses[1].intval == 2);
     assert(responses[2].intval == 3);
+    
+    response = redis.send("EVAL", "\"return {KEYS[1],KEYS[2],ARGV[1],ARGV[2]}\"", 2, "key1", "key2", "first", "second");
+    assert(response.values.length == 4);
+    assert(response.values[0].value == "key1");
+    assert(response.values[1].value == "key2");
+    assert(response.values[2].value == "first");
+    assert(response.values[3].value == "second");
+    
+    //Same as above, but simpler
+    response = redis.eval("return {KEYS[1],KEYS[2],ARGV[1],ARGV[2]}", ["key1", "key2"], ["first", "second"]);
+    assert(response.values.length == 4);
+    assert(response.values[0].value == "key1");
+    assert(response.values[1].value == "key2");
+    assert(response.values[2].value == "first");
+    assert(response.values[3].value == "second");
+    
+    response = redis.eval("return redis.call('set','lua','LUA_AGAIN')");
+    assert(cast(string)redis.send("GET lua") == "LUA_AGAIN");
 }

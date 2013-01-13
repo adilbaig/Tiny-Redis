@@ -115,6 +115,25 @@ void main()
         writeln(k, ") ", v);
     
     
+    /*
+        LUA Scripts
+        Here is how you can do Raw EVAL. Note the \" at either ends of the script. That is required
+        when using send
+    */
+    r = redis.send("EVAL", "\"return redis.call('set','lua','LUA')\"", 0);
+    writeln(redis.send("GET lua"));
+    r = redis.send("EVAL", "\"return {KEYS[1],KEYS[2],ARGV[1],ARGV[2]}\"", 2, "key1", "key2", "first", "second");
+    writeln(r);
+    
+    /* 
+        The eval template can take a standard string as Lua script, along with optional keys
+        and arguments
+    */
+    r = redis.eval("return redis.call('set','lua','LUA_AGAIN')");
+    writeln(redis.send("GET lua"));
+    auto r1 = redis.eval("return {KEYS[1],KEYS[2],ARGV[1],ARGV[2]}", ["key1", "key2"], ["first", "second"]);
+    writeln(r1); //Same as above
+    
     try{
         //And finally this command will throw a RedisResponseException
         writeln(redis.send("AND_THIS_IS_A_COMMAND_REDIS_DOES_NOT UNDERSTAND"));
