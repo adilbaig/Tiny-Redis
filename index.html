@@ -36,7 +36,7 @@
 <p>It supports all of Redis's data types; <a href="http://redis.io/commands#generic">keys</a>, 
 <a href="http://redis.io/commands#hash">hashes</a>,
 <a href="http://redis.io/commands#list">lists</a> and
-<a href="http://redis.io/commands#set">sets</a>. It also has functions for <a href="http://redis.io/topics/pipelining">pipelining</a> and <a href="http://redis.io/topics/transactions">transactions</a>.</p>
+<a href="http://redis.io/commands#set">sets</a>. There's also support for <a href="http://redis.io/commands/eval">Lua scripting</a>. It also has functions for <a href="http://redis.io/topics/pipelining">pipelining</a> and <a href="http://redis.io/topics/transactions">transactions</a>.</p>
 
 <h2>Tiny Redis is ..</h2>
 
@@ -77,6 +77,17 @@ auto redis = new Redis("localhost", 6379);
 
 redis.send("SET name Adil");
 writeln("The name's ", redis.send("GET name")) //The name's Adil
+
+//Add data to a set and read it
+redis.send("SADD", ["fruits", "apples", "oranges", "bananas"]);
+auto fruits = redis.send("SMEMBERS", "fruits");
+for(fruit; fruits)
+	writeln(fruit);
+
+//Auto bool checking
+if(redis.send("EXISTS", fruits));
+	echo "Fruits have been defined!";
+	
 </code></pre>
 
 <h2>Documentation</h2>
@@ -89,7 +100,13 @@ writeln("The name's ", redis.send("GET name")) //The name's Adil
 </ul>
 
 <h2>Benchmarks</h2>
-<p>Coming soon .. </p>
+<p>Benchmarks are heavily dependent on your machine's hardware, Linux ulimits, your Redis server version and whether you're running across a network. You may want to run the benchmarking program on your PC/Server to get a real feel for the speed for your use-case.</p>
+<p>Here are averaged results (of 3 tries) from running the benchmarking program on a Ubuntu 12.04 x64 laptop. Intel core i3 2.13Ghz, 4GB DDR2 RAM</p>
+<pre><code>
+rdmd src/benchmark.d tinyredis/*
+INDIVIDUAL : 12r/msec 12000r/sec 500000 requests in 40935 msecs
+PIPELINED  : 76r/msec 76000r/sec 500000 requests in 6496 msecs
+</code></pre>
 
 <h2>Compilation Instructions</h2>
 
@@ -123,12 +140,12 @@ writeln("The name's ", redis.send("GET name")) //The name's Adil
 <pre><code>make test</code></pre>
 
 <h2>Dependencies</h2>
-<p>None. Tested with dmd 2.059/2.060 on Linux x64.</p>
+<p>None, except a standard D2 compiler. Tested with DMD 2.059/2.060 on Linux x64.</p>
+<p>D1 is not supported.</p>
 
 <h2>Limitations</h2>
 <ul>
 <li>Pub/Sub and the "monitor" command need special support. Not done yet.</li>
-<li>Supports D2 only.</li>
 </ul>
 
 <h2>Support and Feedback</h2>
