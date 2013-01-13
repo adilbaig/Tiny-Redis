@@ -1,9 +1,10 @@
 Changelog
 =========
 
-v1.2.1 (2013-01-08)
------------------
+v1.2.1 (2013-01-14)
+-------------------
 - improved encoder. EVAL works!
+- added a new eval template.
 - improved documentation per DDOC
 
 v1.2 (2012-12-09)
