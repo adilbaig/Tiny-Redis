@@ -6,7 +6,7 @@ private:
     import std.socket;
     import tinyredis.parser;
     
-
+public:
     /**
      * Class to communicate with Redis
      *
