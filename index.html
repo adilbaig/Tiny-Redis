@@ -84,10 +84,20 @@ auto fruits = redis.send("SMEMBERS", "fruits");
 for(fruit; fruits)
 	writeln(fruit);
 
-//Auto bool checking
+//intelligent opCasts for responses!
 if(redis.send("EXISTS", fruits));
 	echo "Fruits have been defined!";
-	
+
+//Lua scripting is supported!
+Response r1 = redis.eval("return {KEYS[1],KEYS[2],ARGV[1],ARGV[2]}", ["key1", "key2"], ["first", "second"]);
+writeln(r1); // [key1, key2, first, second]
+
+//And pipelining
+redis.pipelining(["SET person1:name Adil", "SET person1:name Batman", "SET person1:name Robin"]);
+
+//And transactions
+redis.transaction(["SET ctr = 0", "INCR ctr", "INCR ctr"]);
+
 </code></pre>
 
 <h2>Documentation</h2>
@@ -109,14 +119,7 @@ PIPELINED  : 76r/msec 76000r/sec 500000 requests in 6496 msecs
 </code></pre>
 
 <h2>Compilation Instructions</h2>
-
-<h4>Make a static library (Linux)</h4>
-<p>Download the source code and run `make`</p>
-<pre><code>make lib</code></pre>
-<p>Now, compile your source files using this library. Ex:</p>
-<pre><code>dmd YOUR_SOURCE.d libtinyredis.a</code></pre>
-
-<h4>Source</h4>
+<h4>Using Source</h4>
 <p>Download the source code and compile <b>tinyredis/*</b> with your source files. Works on all platforms. This is recommended if you're new to TinyRedis. Ex:</p>
 <pre><code>dmd YOUR_SOURCE.d tinyredis/*</code></pre>
 
