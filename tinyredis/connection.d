@@ -78,8 +78,8 @@ public:
                 if (sent != (cast(byte[])command).length)
                     throw new ConnectionException("Error while sending request");
                     
-                return receiveResponses();
-            }            
+                return receiveResponses( cast(uint)std.string.countchars(command, "*") );
+            }
             
         private :
 
@@ -98,7 +98,7 @@ public:
                 debug { writeln("Response : ", "'" ~ escape(cast(string)buffer) ~ "'", " Length : ", len); }
             }
             
-            Response[] receiveResponses()
+            Response[] receiveResponses(uint minResponses = 0)
             {
                 byte[] buffer;
                 Response[] responses;
@@ -108,6 +108,8 @@ public:
                 while(true)
                 {
                     receive(buffer);
+                    
+                     writeln("BUFFER : ", escape(cast(string)buffer)); 
                     
                     while(buffer.length > 0)
                     {
@@ -146,7 +148,18 @@ public:
                     
                     if(buffer.length == 0
                         && MultiBulks.length == 0) //Make sure all the multi bulks got their data
+                    {
+                        debug {
+                            if(minResponses > 1 && responses.length < minResponses)
+                                writeln("WAITING FOR MORE RESPONSES ... ");
+                        }
+                            
+                        if(responses.length < minResponses)
+                            continue;
+                            
                         break;
+                    }
+                        
                 }
                 
                 return responses;

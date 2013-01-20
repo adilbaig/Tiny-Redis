@@ -191,6 +191,16 @@ unittest
     assert(responses[3].intval == 4);
     assert(responses[4].intval == 5);
     
+    redis.send("DEL buddies");
+    auto buddiesQ = ["SADD buddies Batman", "SADD buddies Spiderman", "SADD buddies Hulk", "SMEMBERS buddies"];
+    Response[] buddies = redis.pipeline(buddiesQ);
+    assert(buddies.length == buddiesQ.length);
+    assert(buddies[0].type == ResponseType.Integer);
+    assert(buddies[1].type == ResponseType.Integer);
+    assert(buddies[2].type == ResponseType.Integer);
+    assert(buddies[3].type == ResponseType.MultiBulk);
+    assert(buddies[3].values.length == 3);
+    
     //Check transaction
     redis.send("DEL ctr");
     responses = redis.transaction(["SET ctr 1", "INCR ctr", "INCR ctr"], true);
