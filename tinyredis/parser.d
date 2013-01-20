@@ -148,15 +148,17 @@ public :
                         return cast(T)intval;
                     else
                         throw new ConvOverflowException("Cannot convert " ~ to!string(intval) ~ " to " ~ to!(string)(typeid(T)));
+                    break;
                     
                 case ResponseType.Bulk : 
-                try{
-                    return to!(T)(value);
-                }catch(ConvOverflowException e)
-                {
-                    e.msg = "Cannot convert " ~ value ~ " to " ~ to!(string)(typeid(T));
-                    throw e;
-                }
+                    try{
+                        return to!(T)(value);
+                    }catch(ConvOverflowException e)
+                    {
+                        e.msg = "Cannot convert " ~ value ~ " to " ~ to!(string)(typeid(T));
+                        throw e;
+                    }
+                    break;
                 
                 default:
                     throw new RedisCastException("Cannot cast " ~ type ~ " to " ~ to!(string)(typeid(T)));
@@ -497,13 +499,16 @@ unittest
         r.toInt(); //Default int
         assert(false, "Tried to convert long.max to int");
     }
-    catch(ConvOverflowException e){}
+    catch(ConvOverflowException e)
+    {
+        //Ok, exception thrown as expected
+    }
     
     r.value = "127";
-    r.toInt!byte(); 
-    r.toInt!short(); 
-    r.toInt!int(); 
-    r.toInt!long(); 
+    assert(r.toInt!byte() == 127); 
+    assert(r.toInt!short() == 127); 
+    assert(r.toInt!int() == 127); 
+    assert(r.toInt!long() == 127); 
     
     stream = cast(byte[])"*0\r\n";
     response = parseResponse(stream);
