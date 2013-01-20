@@ -1,5 +1,5 @@
 LIB = tinyredis/*
-VERSION=1.2.1
+VERSION=1.2.2
 
 example:
 	rdmd src/example.d $(LIB)

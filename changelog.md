@@ -1,6 +1,10 @@
 Changelog
 =========
 
+v1.2.2 (2013-01-20)
+-------------------
+- pipeline bug fix
+
 v1.2.1 (2013-01-14)
 -------------------
 - improved encoder. EVAL works!
