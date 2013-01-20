@@ -4,7 +4,7 @@ Redis driver for the D programming language. TinyRedis is fast, simple, intuitiv
 
 It supports all of Redis's data types; keys, hashes, lists and sets. It also has simple functions for pipelining and transactions.
 
-[Changelog](https://github.com/adilbaig/Tiny-Redis/blob/master/changelog.md)
+Changelog : [Changelog](https://github.com/adilbaig/Tiny-Redis/blob/master/changelog.md)
 
 Read more : [adilbaig.github.com/Tiny-Redis](http://adilbaig.github.com/Tiny-Redis)
 
