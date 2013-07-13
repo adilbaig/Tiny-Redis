@@ -5,9 +5,15 @@
     <meta http-equiv="X-UA-Compatible" content="chrome=1">
     <title>Tiny Redis - Redis driver for the D programming language</title>
 
-    <link rel="stylesheet" href="stylesheets/styles.css">
-    <link rel="stylesheet" href="stylesheets/pygment_trac.css">
-    <script src="javascripts/scale.fix.js"></script>
+    <link rel="stylesheet" href="styles/styles.css">
+    <link rel="stylesheet" href="styles/pygment_trac.css">
+    <script src="scripts/scale.fix.js"></script>
+    
+	<!-- Syntax Highlighter : http://softwaremaniacs.org/soft/highlight/en/download/ -->
+	<link rel="stylesheet" href="highlight.js/styles/pojoaque.css">
+	<script src="scripts/highlight.pack.js"></script>
+	<script>hljs.initHighlightingOnLoad();</script>
+	
     <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
     <!--[if lt IE 9]>
     <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
@@ -114,8 +120,7 @@ redis.transaction(["SET ctr = 0", "INCR ctr", "INCR ctr"]);
 <h2>Benchmarks</h2>
 <p>Benchmarks are heavily dependent on your machine's hardware, Linux ulimits, your Redis server version and whether you're running across a network. You may want to run the benchmarking program on your PC/Server to get a real feel for the speed for your use-case.</p>
 <p>Here are averaged results (of 3 tries) from running the benchmarking program on a Ubuntu 12.04 x64 laptop. Intel core i3 2.13Ghz, 4GB DDR2 RAM</p>
-<pre><code>
-rdmd src/benchmark.d tinyredis/*
+<pre class="bash"><code>rdmd src/benchmark.d tinyredis/*
 INDIVIDUAL : 12r/msec 12000r/sec 500000 requests in 40935 msecs
 PIPELINED  : 76r/msec 76000r/sec 500000 requests in 6496 msecs
 </code></pre>
