@@ -37,13 +37,9 @@ public:
             
             void close()
             {
-                if(conn.isAlive())
+                if(conn 
+                    && conn.isAlive)
                     conn.close();
-            }
-            
-            ~this()
-            {
-                this.close();
             }
             
             /**
@@ -109,7 +105,7 @@ public:
                 {
                     receive(buffer);
                     
-                     writeln("BUFFER : ", escape(cast(string)buffer)); 
+                    debug{ writeln("BUFFER : ", escape(cast(string)buffer)); } 
                     
                     while(buffer.length > 0)
                     {
