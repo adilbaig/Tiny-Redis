@@ -95,8 +95,7 @@ public :
         /**
          * Execute commands in a MULTI/EXEC block.
          * 
-         * Params: 
-         * justResults = By default, only the results of a transaction are returned. If "true, the results of each queuing step is also returned. 
+         * @param all - (Default: false) - By default, only the results of a transaction are returned. If set to "true", the results of each queuing step is also returned. 
          *
          * Examples:
          *
@@ -118,7 +117,7 @@ public :
             if(resp.isError())
                 throw new RedisResponseException(resp.value);
                 
-            return rez[$ - 1].values;
+            return resp.values;
         }
         
         /**
