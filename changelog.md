@@ -1,6 +1,13 @@
 Changelog
 =========
 
+v1.2.3 (2013-08-25)
+-------------------
+- Added a new 'Request' struct. Allows RedisConnection.request to accurately predict number of responses.
+- Moved folders around.
+- Deleted downloads folder. May use github's "Attach binaries to release" feature in the future.
+- Updated unittests
+
 v1.2.2 (2013-01-20)
 -------------------
 - pipeline bug fix
