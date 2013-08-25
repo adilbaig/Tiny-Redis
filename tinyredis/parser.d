@@ -2,9 +2,11 @@ module tinyredis.parser;
 
 private:
     import std.array : split, replace, join;
-    import std.string : strip;
+    import std.string : strip, format;
     import std.stdio : writeln;
+    import std.algorithm : find;
     import std.conv  : to, text, ConvOverflowException;
+    import std.traits;
     
 public : 
 
@@ -307,70 +309,57 @@ public :
         return response;
     }
     
+    
     /* ---------- REQUEST PARSING FUNCTIONS ----------- */
 
     /**
-     * Encodes a request to a MultiBulk using any type that can be converted to a string
-     *
-     * Examples:
-     * ---
-     * encode("SADD", "myset", 1)
-     * encode("SADD", "myset", 1.2)
-     * encode("SADD", "myset", true)
-     * encode("SADD", "myset", "Batman")
-     * encode("SADD", "myset", object) //provided toString is implemented
-     * encode("GET", "*") == encode("GET *") == encode("GET", ["*"])
-     * ---
-     */
-    @trusted string encode(T...)(string key, T args)
+     Represents a Request to be sent to the server
+    */
+    struct Request
     {
-        string request = key;
+        string[] args; 
         
-        static if(args.length > 0)
-            foreach(a; args)
-                request ~= " " ~ text(a);
-        
-        return toMultiBulk(request);
-    }
+        @property void add(T)(T arg)
+        {
+            static if(isArray!(typeof(arg)) && !is(typeof(arg) == immutable(char)[])) {
+                foreach(b; arg)
+                    add(b);
+            }
+            else 
+                args ~= text(arg);
+        }
     
-    /**
-     * Encode a request of a parametrized array
-     *
-     * Examples:
-     * ---
-     * encode("SREM", ["myset", "$3", "$4"]) == encode("SREM myset $3 $4") == encode("SREM", "myset", "$3", "$4")
-     * ---
-     */
-    @trusted string encode(T)(string key, T[] args)
-    {
-        string request = key;
-        
-        static if(is(typeof(args) == immutable(char)[]))
-            request ~= " " ~ args;
-        else
+        @property @trusted string toMultiBulk()
+        {
+            string cargs;
             foreach(a; args)
-                request ~= " " ~ text(a);
+                cargs ~= toBulk(a);
                 
-        return toMultiBulk(request);
+            return format("*%d\r\n%s", args.length, cargs);
+        }
+        
+        alias toMultiBulk toString;
     }
     
-    /**
-     * Encodes a string to MultiBulk format
-     *
-     * Use encode instead
-     */
-    @trusted string toMultiBulk(string command)
+    private string[] stripAndChop(string cmd)
     {
-        command = strip(command);
+        /*
+         Sometimes a command is passed as a full string. Ex: command = "GET *s";
+         This function breaks it down to its args
+        */ 
+        
+        auto command = strip(cmd);
         
         string[] cmds;
         char[] buffer;
         
+        //Loop through each char ..
         uint i = 0;
         while(i < command.length)
         {
             auto c = command[i++];
             
+            // ..if the char is a ", accumalate all characters until another " is found.
             if(c == '"')
             {
                 while(i < command.length)
@@ -380,35 +369,57 @@ public :
                         break;
                     buffer ~= c1;
                 }
-            }
+            } // if a space is found, cat the buffer to cmds ..
             else if(c == ' ')
             {
                 cmds ~= cast(string)buffer;
                 buffer.length = 0;
             }
-            else
+            else // .. else cat everything else
                 buffer ~= c;
         }
         
         cmds ~= cast(string)buffer;
-        
-        char[] res = "*" ~ to!(char[])(cmds.length) ~ CRLF;
-        foreach(cmd; cmds)
-            res ~= toBulk(cmd);
-        
-        return cast(string)res;
+        return cmds;
     }
     
-    @trusted string toBulk(string str)
+    /**
+     * Encodes a Redis command to a Request struct using any type that can be converted to a string
+     *
+     * Examples:
+     * ---
+     * encode("SADD", "myset", 1)
+     * encode("SADD", "myset", 1.2)
+     * encode("SADD", "myset", true)
+     * encode("SADD", "myset", "Batman")
+     * encode("DEL", ["key1", "key2"])
+     * encode("SADD", "numbers", [1,2,3])
+     * encode("SADD", "myset", object) //provided toString is implemented
+     * encode("GET", "*") == encode("GET *") == encode("GET", ["*"])
+     * ---
+     */
+    @trusted Request encode(T...)(string key, T args)
     {
-        return "$" ~ to!string((cast(byte[])str).length) ~ CRLF ~ str ~ CRLF;
+        Request r;
+        
+        foreach(piece; stripAndChop(key))
+            r.add = piece;
+            
+        foreach(a; args)
+            r.add = a;
+        
+        return r;
+    }
+    
+    @trusted string toBulk(const char[] str)
+    {
+        return format("$%d\r\n%s\r\n", str.length, str);
     }
     
     @trusted string escape(string str)
     {
          return replace(str,"\r\n","\\r\\n");
     }
-    
     
     
     /* ----------- EXCEPTIONS ------------- */
@@ -442,11 +453,21 @@ private :
 unittest
 {
     assert(toBulk("$2") == "$2\r\n$2\r\n");
-    assert(toMultiBulk("GET *") == "*2\r\n$3\r\nGET\r\n$1\r\n*\r\n");
+    assert(encode("GET *2").toString() == "*2\r\n$3\r\nGET\r\n$2\r\n*2\r\n");
+    assert(encode("TTL myset").toString() == "*2\r\n$3\r\nTTL\r\n$5\r\nmyset\r\n");
+    assert(encode("TTL", "myset").toString() == "*2\r\n$3\r\nTTL\r\n$5\r\nmyset\r\n");
     
     auto lua = "return redis.call('set','foo','bar')";
-    assert(toMultiBulk("EVAL \"" ~ lua ~ "\" 0") == "*3\r\n$4\r\nEVAL\r\n$"~to!(string)(lua.length)~"\r\n"~lua~"\r\n$1\r\n0\r\n");
-    assert(toMultiBulk("\"" ~ lua ~ "\" \"" ~ lua ~ "\" ") == "*2\r\n$"~to!(string)(lua.length)~"\r\n"~lua~"\r\n$"~to!(string)(lua.length)~"\r\n"~lua~"\r\n");
+    assert(encode("EVAL \"" ~ lua ~ "\" 0").toString() == "*3\r\n$4\r\nEVAL\r\n$"~to!(string)(lua.length)~"\r\n"~lua~"\r\n$1\r\n0\r\n");
+    assert(encode("\"" ~ lua ~ "\" \"" ~ lua ~ "\" ").toString() == "*2\r\n$"~to!(string)(lua.length)~"\r\n"~lua~"\r\n$"~to!(string)(lua.length)~"\r\n"~lua~"\r\n");
+    assert(encode("eval \"" ~ lua ~ "\" " ~ "0") == encode("eval", lua, 0));
+    
+    //Testing encode
+    assert(encode("SREM", ["myset", "$3", "$4"]).toString() == encode("SREM myset $3 $4").toString());
+    assert(encode("SREM", "myset", "$3", "$4").toString()   == encode("SREM myset $3 $4").toString());
+    assert(encode("SADD", "numbers", [1,2,3]).toString()    == encode("SADD numbers 1 2 3").toString());
+    assert(encode("TTL", "myset").toString() == encode("TTL myset").toString());
+    assert(encode("TTL", "myset").toString() == encode("TTL", ["myset"]).toString());
     
     byte[] stream = cast(byte[])"*4\r\n$3\r\nGET\r\n$1\r\n*\r\n:123\r\n+A Status Message\r\n";
     
@@ -540,11 +561,4 @@ unittest
     response = parseResponse(stream);
     foreach(k,v; response)
         assert(false, "opApply is broken");
-
-    //Testing encode
-    assert(encode("SREM", ["myset", "$3", "$4"]) == encode("SREM myset $3 $4"));
-    assert(encode("SREM", "myset", "$3", "$4")   == encode("SREM myset $3 $4"));
-    assert(encode("TTL", "myset")   == encode("TTL myset"));
-    assert(encode("TTL", ["myset"]) == encode("TTL myset"));
-//    writeln(response);
 } 
