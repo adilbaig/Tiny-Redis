@@ -24,12 +24,10 @@
       <header>
         <h1 class="header">Tiny Redis</h1>
         <p class="header">Fast, Simple, Unit Tested. Redis driver for <a href="http://www.dlang.org">D</a></p>
-        <p>Latest Version : 1.2.2</p>
+        <p>Latest Version : 1.2.3</p>
 
         <ul>
-          <!-- <li class="download"><a class="buttons" href="https://github.com/downloads/adilbaig/Tiny-Redis/libtinyredis.a">Linux - Static library</a></li>
-          <li class="download"><a class="buttons" href="https://github.com/downloads/adilbaig/Tiny-Redis/libtinyredis_x64.a">Linux x64 - Static library</a></li> -->
-          <li class="download"><a class="buttons" href="https://github.com/adilbaig/Tiny-Redis/archive/1.2.2.zip">All platforms - Source, examples, benchmark</a></li>
+          <li class="download"><a class="buttons" href="https://github.com/adilbaig/Tiny-Redis/releases/tag/1.2.3">All platforms - Source, examples, benchmark</a></li>
           <li><a class="buttons github" href="https://github.com/adilbaig/Tiny-Redis">View On GitHub</a></li>
         </ul>
 		<iframe src="http://ghbtns.com/github-btn.html?user=adilbaig&repo=Tiny-Redis&type=watch&count=true&size=large" allowtransparency="true" frameborder="0" scrolling="0" width="190px" height="35px" ></iframe>
@@ -87,23 +85,26 @@ redis.send("SET name Adil");
 writeln("The name's ", redis.send("GET name")) //The name's Adil
 
 //Add data to a set and read it
-redis.send("SADD", ["fruits", "apples", "oranges", "bananas"]);
+redis.send("SADD", "fruits", ["apples", "oranges", "bananas"]);
 auto fruits = redis.send("SMEMBERS", "fruits");
 for(fruit; fruits)
 	writeln(fruit);
 
+//Cast your results
+writefln("There are %s fruits", redis.send!(uint)("SCARD", fruits)));
+
 //intelligent opCasts for responses!
 if(redis.send("EXISTS", fruits));
 	echo "Fruits have been defined!";
-
-//Lua scripting is supported!
+	
+//Lua scripting is supported! ..
 Response r1 = redis.eval("return {KEYS[1],KEYS[2],ARGV[1],ARGV[2]}", ["key1", "key2"], ["first", "second"]);
 writeln(r1); // [key1, key2, first, second]
 
-//And pipelining
+// .. And pipelining
 redis.pipelining(["SET person1:name Adil", "SET person1:name Batman", "SET person1:name Robin"]);
 
-//And transactions
+//.. And transactions
 redis.transaction(["SET ctr = 0", "INCR ctr", "INCR ctr"]);
 
 </code></pre>
