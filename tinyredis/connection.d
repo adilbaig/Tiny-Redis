@@ -48,33 +48,37 @@ public:
              * Examples:
              *
              * ---
-             * Response[] responses = request(encode("GET", "*"));
-             * for(r; responses)
-             *      writeln(r);
-             *
-             * //Same as above, but with a Multibulk encoded string
-             * Response[] responses = request("*2\r\n$3\r\nGET\r\n$1\r\n*\r\n");
-             * for(r; responses)
-             *      writeln(r);
+             * request(encode("SMEMBERS", "myset"));
              * 
              * //The following is an example of "pipelining" commands
-             * request(encode("SET ctr 1") 
-                        ~ encode("INCR ctr")
-                        ~ encode("INCR ctr") 
-                        ); //Same as Redis.pipeline(["SET ctr 1", "INCR ctr", "INCR ctr"])
+             * Response[] responses = request([encode("GET myname"), encode("GET hisname"), encode("GET hername")]);
+             * foreach(r; responses)
+             *      writeln(r);
              * ---
              */
-            Response[] request(string command)
-            in { assert(command.length > 0); }
+            Response request(Request command)
             body 
             {
+                Request[] r = [command];
+                auto rez = request(r);
+                return rez[0];
+            }
+            
+            Response[] request(Request[] commands)
+            in { assert(commands.length > 0); }
+            body 
+            {
+                string command;
+                foreach(c; commands)
+                    command ~= c.toString();
+                    
                 debug { writeln("Request : '", escape(command) ~ "'"); }
                 
                 auto sent = conn.send(command);
                 if (sent != (cast(byte[])command).length)
                     throw new ConnectionException("Error while sending request");
                     
-                return receiveResponses( cast(uint)std.string.countchars(command, "*") );
+                return receiveResponses(commands.length);
             }
             
         private :
@@ -94,7 +98,7 @@ public:
                 debug { writeln("Response : ", "'" ~ escape(cast(string)buffer) ~ "'", " Length : ", len); }
             }
             
-            Response[] receiveResponses(uint minResponses = 0)
+            Response[] receiveResponses(size_t minResponses = 0)
             {
                 byte[] buffer;
                 Response[] responses;

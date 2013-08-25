@@ -2,7 +2,7 @@ module tinyredis.redis;
 
 private:
     import std.array : appender;
-    import tinyredis.parser : Response, ResponseType;
+    import tinyredis.parser : Response, ResponseType, Request;
     
 public :
     import tinyredis.connection;
@@ -33,45 +33,22 @@ public :
          * send("SADD", "myset", 1.2)
          * send("SADD", "myset", true)
          * send("SADD", "myset", "Batman")
+         * send("SREM", "myset", ["$3", "$4"])
          * send("SADD", "myset", object) //provided 'object' implements toString()
          * send("GET", "*") == send("GET *")
          *
          * //Lua scripts must enclose their script in \"
-         * send("EVAL", "\"return redis.call('set','lua','LUA')\"", 0); 
+         * send("EVAL", "return redis.call('set','lua','LUA')", 0); 
          * ---
          */
         R send(R = Response, T...)(string key, T args)
         {
-            return cast(R)(conn.request(encode(key, args))[0]);
+            return cast(R)(conn.request(encode(key, args)));
         }
         
-        /**
-         * Call Redis using with a parameterized array T[]. 
-         *
-         * Examples:
-         *
-         * ---
-         * send("SREM", ["myset", "$3", "$4"]) == send("SREM myset $3 $4")
-         * ---
-         */
-        R send(R = Response, T)(string key, T[] args)
+        R send(R = Response)(Request r)
         {
-            return cast(R)conn.request(encode(key, args))[0];
-        }
-        
-        /**
-         * Send a redis-encoded string. It can be one or more commands concatenated together
-         *
-         * Examples:
-         *
-         * ---
-         * sendRaw(encode("GET NAME"));
-         * sendRaw(encode("SET ctr 1") ~ encode("INCR ctr") ~ encode("INCR ctr"))); //This is raw pipelining
-         * ---
-         */
-        Response[] sendRaw(string command)
-        {
-            return conn.request(command);
+            return cast(R)(conn.request(r));
         }
         
         /**
@@ -83,13 +60,13 @@ public :
          * pipeline(["SADD shopping_cart Shirt", "SADD shopping_cart Pant", "SADD shopping_cart Boots"])
          * ---
          */
-        Response[] pipeline(const string[] commands)
+        Response[] pipeline(string[] commands)
         {
-            auto app = appender!string();
+            Request[] r;
             foreach(c; commands)
-                app.put(encode(c));
+                r ~= encode(c);
             
-            return conn.request(app.data);
+            return conn.request(r);
         }
         
         /**
@@ -103,7 +80,7 @@ public :
          * transaction(["SADD shopping_cart Shirt", "INCR shopping_cart_ctr"])
          * ---
          */
-        Response[] transaction(const string[] commands, bool all = false)
+        Response[] transaction(string[] commands, bool all = false)
         {
             auto cmd = ["MULTI"];
             cmd ~= commands;
@@ -140,13 +117,18 @@ public :
          */
         Response eval(K = string, A = string)(string lua_script, K[] keys = [], A[] args = [])
         {
-            string str;
+            Request r;
+            
+            r.add = "EVAL";
+            r.add = lua_script;
+            r.add = keys.length;
+            
             foreach(k; keys)
-                str ~= k ~ " ";
-            foreach(k; args)
-                str ~= k ~ " ";
-                    
-            return send("EVAL", "\"" ~ lua_script ~ "\"", keys.length, str);
+                r.add = k;
+            foreach(a; args)
+                r.add = a;
+                
+            return send(r);
         }
     }
    
@@ -156,7 +138,6 @@ unittest
     auto response = redis.send("LASTSAVE");
     assert(response.type == ResponseType.Integer);
     
-//    response = redis.send!(bool)("SET", "name", "adil");
     assert(redis.send!(bool)("SET", "name", "adil"));
     
     response = redis.send("GET name");
@@ -169,12 +150,12 @@ unittest
     assert(response.type == ResponseType.Nil);
     
     redis.send("DEL myset");
-    redis.send("SADD", "myset", 1);
     redis.send("SADD", "myset", 1.2);
+    redis.send!(bool)(encode("SADD", "myset", 1));
     redis.send("SADD", "myset", true);
     redis.send("SADD", "myset", "adil");
     redis.send("SADD", "myset", 350001939);
-    redis.send("SADD",["myset","$4"]);
+    redis.send("SADD", ["myset","$4"]);
     auto r = redis.send("SMEMBERS myset");
     assert(r.type == ResponseType.MultiBulk);
     assert(r.values.length == 6);
@@ -220,7 +201,7 @@ unittest
     assert(responses[1].intval == 2);
     assert(responses[2].intval == 3);
     
-    response = redis.send("EVAL", "\"return {KEYS[1],KEYS[2],ARGV[1],ARGV[2]}\"", 2, "key1", "key2", "first", "second");
+    response = redis.send("EVAL", "return {KEYS[1],KEYS[2],ARGV[1],ARGV[2]}", 2, "key1", "key2", "first", "second");
     assert(response.values.length == 4);
     assert(response.values[0].value == "key1");
     assert(response.values[1].value == "key2");
@@ -237,4 +218,5 @@ unittest
     
     response = redis.eval("return redis.call('set','lua','LUA_AGAIN')");
     assert(cast(string)redis.send("GET lua") == "LUA_AGAIN");
+    /**/
 }
