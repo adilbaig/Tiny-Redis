@@ -13,5 +13,15 @@ Download the latest stable release v1.2.3 : https://github.com/adilbaig/Tiny-Red
 <h3>Change Log</h3>
 [See the Changelog](https://github.com/adilbaig/Tiny-Redis/blob/master/changelog.md)
 
+<h3>Bugs and Contributions</h3>
+I'm happy to accept all contributions from anyone using this library. The best way to contribute code or documentation is to fork this repository and send a pull request. 
+
+Report bugs by [opening a new issue](https://github.com/adilbaig/Tiny-Redis/issues/new)
+
+<h3>Star this project</h3>
+If you use this project, please star it on github. That's a quick acknowledgement for me that you are using it.
+
+Thanks
+
 Adil Baig
 <br />Twitter : [@aidezigns](http://twitter.com/aidezigns)
