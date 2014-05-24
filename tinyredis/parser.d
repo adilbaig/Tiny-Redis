@@ -34,7 +34,7 @@ public :
     struct Response
     {
         ResponseType type;
-        uint count; //Used for multibulk only
+        int count; //Used for multibulk only. -1 is a valid multibulk. Indicates nil
         
         union{
             string value;
@@ -64,7 +64,7 @@ public :
         
         bool isNil()
         {
-            return (type == ResponseType.Nil);
+            return (type == ResponseType.Nil); 
         }
         
         bool isStatus()
@@ -297,8 +297,16 @@ public :
                 break;
             
             case '*' :
+            	int l = to!int(cast(char[])bytes);
+                if(l == -1)
+                {
+                    response.type = ResponseType.Nil;
+                    break;
+                }
+                
                 response.type = ResponseType.MultiBulk;
-                response.count = to!int(cast(char[])bytes);
+                response.count = l;
+                 
                 break;
                 
             default :
@@ -469,9 +477,37 @@ unittest
     assert(encode("TTL", "myset").toString() == encode("TTL myset").toString());
     assert(encode("TTL", "myset").toString() == encode("TTL", ["myset"]).toString());
     
-    byte[] stream = cast(byte[])"*4\r\n$3\r\nGET\r\n$1\r\n*\r\n:123\r\n+A Status Message\r\n";
-    
+    //Test Nil bulk
+    byte[] stream = cast(byte[])"$-1\r\n";
     auto response = parseResponse(stream);
+    assert(response.toString == "");
+    assert(response.toBool == false);
+    assert(cast(bool)response == false);
+    try{
+        cast(int)response;
+        assert(false);
+    }catch(RedisCastException e)
+    {
+        assert(true);
+    }
+    
+    //Test Nil multibulk
+    stream = cast(byte[])"*-1\r\n";
+    response = parseResponse(stream);
+    assert(response.toString == "");
+    assert(response.toBool == false);
+    assert(cast(bool)response == false);
+    try{
+        cast(int)response;
+        assert(false);
+    }catch(RedisCastException e)
+    {
+        assert(true);
+    }
+    
+    stream = cast(byte[])"*4\r\n$3\r\nGET\r\n$1\r\n*\r\n:123\r\n+A Status Message\r\n";
+    
+    response = parseResponse(stream);
     assert(response.type == ResponseType.MultiBulk);
     assert(response.count == 4);
     assert(response.values.length == 0);
