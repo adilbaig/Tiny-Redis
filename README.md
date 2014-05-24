@@ -8,7 +8,7 @@ It supports all of Redis's data types; keys, hashes, lists and sets. It also has
 TinyRedis website : **http://adilbaig.github.com/Tiny-Redis**
 
 <h3>Latest Release</h3>
-Download the latest stable release v1.2.3 : https://github.com/adilbaig/Tiny-Redis/releases
+Download the latest stable release here : https://github.com/adilbaig/Tiny-Redis/releases
 
 <h3>Change Log</h3>
 [See the Changelog](https://github.com/adilbaig/Tiny-Redis/blob/master/changelog.md)
