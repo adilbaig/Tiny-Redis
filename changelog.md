@@ -1,6 +1,10 @@
 Changelog
 =========
 
+v1.2.4 (2014-05-24)
+-------------------
+- Minor bug fix
+ 
 v1.2.3 (2013-08-25)
 -------------------
 - Added a new 'Request' struct. Allows RedisConnection.request to accurately predict number of responses.
