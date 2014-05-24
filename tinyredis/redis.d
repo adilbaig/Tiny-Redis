@@ -218,5 +218,8 @@ unittest
     
     response = redis.eval("return redis.call('set','lua','LUA_AGAIN')");
     assert(cast(string)redis.send("GET lua") == "LUA_AGAIN");
-    /**/
+    
+    // A BLPOP /timesout to a Nil multibulk
+    response = redis.send("BLPOP nonExistentList 1");
+    assert(response.isNil());
 }
