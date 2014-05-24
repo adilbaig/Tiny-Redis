@@ -150,7 +150,7 @@ public :
                         return cast(T)intval;
                     else
                         throw new ConvOverflowException("Cannot convert " ~ to!string(intval) ~ " to " ~ to!(string)(typeid(T)));
-                    break;
+//                    break;
                     
                 case ResponseType.Bulk : 
                     try{
@@ -160,7 +160,7 @@ public :
                         e.msg = "Cannot convert " ~ value ~ " to " ~ to!(string)(typeid(T));
                         throw e;
                     }
-                    break;
+//                    break;
                 
                 default:
                     throw new RedisCastException("Cannot cast " ~ type ~ " to " ~ to!(string)(typeid(T)));
@@ -262,7 +262,7 @@ public :
                 
             case '-' :
                 throw new RedisResponseException(cast(string)bytes);
-                break;
+//                break;
                 
             case ':' :
                 response.type = ResponseType.Integer;
