@@ -10,6 +10,8 @@ private:
     
 public : 
 
+	import tinyredis.encoder;
+	
     const string CRLF = "\r\n";
     
     enum ResponseType : byte 
@@ -337,13 +339,9 @@ public :
                 args ~= text(arg);
         }
     
-        @property @trusted string toMultiBulk()
+        @property @trusted string toString()
         {
-            string cargs;
-            foreach(a; args)
-                cargs ~= toBulk(a);
-                
-            return format("*%d\r\n%s", args.length, cargs);
+            return argsToMultiBulk(args);
         }
         
         alias toMultiBulk toString;
@@ -418,17 +416,6 @@ public :
         
         return r;
     }
-    
-    @trusted string toBulk(const char[] str)
-    {
-        return format("$%d\r\n%s\r\n", str.length, str);
-    }
-    
-    @trusted string escape(string str)
-    {
-         return replace(str,"\r\n","\\r\\n");
-    }
-    
     
     /* ----------- EXCEPTIONS ------------- */
     

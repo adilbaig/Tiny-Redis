@@ -2,6 +2,7 @@ module tinyredis.redis;
 
 private:
     import std.array : appender;
+    import std.socket : TcpSocket, InternetAddress;
     import tinyredis.parser : Response, ResponseType, Request;
     
 public :
@@ -11,7 +12,7 @@ public :
     class Redis
     {
         private:
-            RedisConnection conn;
+            TcpSocket conn;
         
         public:
         
@@ -20,7 +21,7 @@ public :
          */
         this(string host = "127.0.0.1", ushort port = 6379)
         {
-            conn = new RedisConnection(host, port);
+            conn = new TcpSocket(new InternetAddress(host, port));
         }
         
         /**
@@ -51,6 +52,11 @@ public :
             return cast(R)(conn.request(r));
         }
         
+        R sendRaw(R = Response)(string r)
+        {
+            return cast(R)(conn.requestRaw(r));
+        }
+        
         /**
          * Send a series of commands as a pipeline
          *
@@ -62,11 +68,12 @@ public :
          */
         Response[] pipeline(string[] commands)
         {
+        	auto appender = appender!(Request[])();
             Request[] r;
             foreach(c; commands)
-                r ~= encode(c);
+                appender ~= encode(c);
             
-            return conn.request(r);
+            return conn.request(appender.data);
         }
         
         /**

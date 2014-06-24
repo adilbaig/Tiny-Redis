@@ -14,7 +14,7 @@ void main()
     auto redis = new Redis("localhost", 6379);
     
     //Lies, great lies, and benchmarks.
-    const uint reqs = 500_000;
+    const uint reqs = 100_000;
     
     StopWatch sw;
     sw.reset();
@@ -24,7 +24,20 @@ void main()
     sw.stop();
     
     auto time = sw.peek().msecs;
-    writeln("INDIVIDUAL : ", reqs/time, "r/msec ", (reqs/time)*1000 , "r/sec ", reqs, " requests in ", time, " msecs");
+    auto time_s = sw.peek().seconds;
+    writeln("INDIVIDUAL : ", reqs/time, "r/ms  [~", (reqs/time_s), "r/s].  ", reqs, " requests in ", time, "ms");
+    
+    sw.reset();
+    sw.start();
+    
+    auto str = encode("GET name").toString();
+    for(uint i = 0; i < reqs; i++)
+        redis.sendRaw(str);
+    sw.stop();
+    
+    time = sw.peek().msecs;
+    time_s = sw.peek().seconds;
+    writeln("INDIVIDUAL (RAW): ", reqs/time, "r/ms  [~", (reqs/time_s), "r/s].  ", reqs, " requests in ", time, "ms");
     
     sw.reset();
     sw.start();
@@ -44,5 +57,6 @@ void main()
     sw.stop();
     
     time = sw.peek().msecs;
-    writeln("PIPELINED  : ", reqs/time, "r/msec ", (reqs/time)*1000 , "r/sec ", reqs, " requests in ", time, " msecs");
+    time_s = sw.peek().seconds;
+    writeln("PIPELINED  : ", reqs/time, "r/ms [~", (reqs/time_s), "r/s]. ", reqs, " requests in ", time, "ms");
 }
