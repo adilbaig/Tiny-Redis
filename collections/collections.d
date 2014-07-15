@@ -1,4 +1,4 @@
-module tinyredis.collections;
+module collections;
 
 import std.range, 
        std.algorithm,

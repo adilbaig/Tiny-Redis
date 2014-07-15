@@ -13,6 +13,15 @@ debug {
 
 public:
 
+	/**
+     * Sends a pre-encoded string
+     *
+     * Params:
+     *   conn     = Connection to redis server.
+     *   encoded_cmd = The command to be sent.
+     *
+     * Throws: $(D ConnectionException) if sending fails.
+     */
 	Response requestRaw(TcpSocket conn, string encoded_cmd)
     {
         debug { writeln("Request : '", escape(encoded_cmd) ~ "'"); }
