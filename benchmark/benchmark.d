@@ -8,6 +8,15 @@ import tinyredis.redis,
  */
 void main()
 {
+//	====== PING_INLINE ======
+//  10000 requests completed in 0.29 seconds
+//  1 parallel clients
+//  3 bytes payload
+//  keep alive: 1
+//
+//100.00% <= 0 milliseconds
+//34602.07 requests per second
+
     /**
      * If your redis server is not on its standard host/port, adjust it here :
      */

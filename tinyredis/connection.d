@@ -6,6 +6,8 @@ public:
 private:
     import std.array : appender, back, popBack;
     import tinyredis.parser;
+    import tinyredis.request;
+    import tinyredis.response;
 
 debug {
 	import std.stdio : writeln;
@@ -144,9 +146,10 @@ private :
         return responses;
     }
     
-    
+
+public:    
    /* -------- EXCEPTIONS ------------- */
-    
+ 
     class ConnectionException : Exception {
         this(string msg) { super(msg); }
     }

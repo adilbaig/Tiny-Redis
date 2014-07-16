@@ -137,7 +137,7 @@ void main()
     try{
         //And finally this command will throw a RedisResponseException
         writeln(redis.send("AND_THIS_IS_A_COMMAND_REDIS_DOES_NOT UNDERSTAND"));
-    }catch(RedisResponseException e)
+    }catch(ConnectionException e)
     {
         writeln("(error) ", e.msg);
     }

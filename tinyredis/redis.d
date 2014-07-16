@@ -3,11 +3,12 @@ module tinyredis.redis;
 private:
     import std.array : appender;
     import std.socket : TcpSocket, InternetAddress;
-    import tinyredis.parser : Response, ResponseType, Request;
+    import tinyredis.request;
+    import tinyredis.response;
     
 public :
     import tinyredis.connection;
-    import tinyredis.parser : encode, RedisResponseException;
+    import tinyredis.encoder;
     
     class Redis
     {
@@ -44,7 +45,18 @@ public :
          */
         R send(R = Response, T...)(string key, T args)
         {
+        	//Implement a write queue here.
+        	// All encoded responses are put into a write queue and flushed
+        	// For a send request, flush the queue and listen to a response
+        	// FOr async calls, just flush the queue
+        	// This automatically gives us PubSub
+        	 
             return cast(R)(conn.request(encode(key, args)));
+        }
+        
+        R send(R = Response)(string cmd)
+        {
+            return cast(R)(conn.requestRaw(toMultiBulk(cmd)));
         }
         
         R send(R = Response)(Request r)

@@ -1,22 +1,28 @@
 module tinyredis.encoder;
 
-//import std.string : strip, format;
+private :
+	import std.string : format, strip;
+	import std.array;
+	import std.traits;
+	import std.conv;
 
-//import std.string, std.stdio, std.conv, std.algorithm, std.array;
+public:
 
 @trusted string encode(T...)(string key, T args)
 {
-	string ret;
+	Request r;
 	
-    static if(isArray!(typeof(arg)) && !is(typeof(arg) == immutable(char)[])) {
-        foreach(b; arg)
-            add(b);
+    static if(isArray!(T) && !is(typeof(args) == immutable(char)[])) {
+        foreach(b; args)
+            r.add(b);
     }
     else 
-        ret ~= text(arg);
+        ret ~= text(args);
+        
+    return ret;
 }
     
-@trusted C[] argsToMultiBulk(C)(const C[][] commands) if (isSomeChar!C)
+@trusted C[] toMultiBulk(C)(const C[][] commands) if (isSomeChar!C)
 {
 	auto appender = appender!(C[])();
 	appender.reserve(commands.length * 10);
@@ -69,7 +75,7 @@ module tinyredis.encoder;
 		bulk_count++;
 	}
 
-	return format("*%d\r\n%s", bulk_count, buffer);
+	return format!(C)("*%d\r\n%s", bulk_count, buffer);
 }
 
 @trusted C[] toBulk(C)(const C[] str) if (isSomeChar!C)
