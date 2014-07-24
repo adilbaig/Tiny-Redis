@@ -6,7 +6,6 @@ public:
 private:
     import std.array : appender, back, popBack;
     import tinyredis.parser;
-    import tinyredis.request;
     import tinyredis.response;
 
 debug {
@@ -15,6 +14,25 @@ debug {
 
 public:
 
+//	struct commandQueue {
+//		string[] commands;
+//		uint pos;
+//		
+//		void enqueue(string command)
+//		{
+//			commands[++pos] = command;
+//		}
+//		
+//		string deque()
+//		{
+//			if(pos < 1) {
+//				return commands[pos];
+//			}
+//			
+//			return commands[--pos];
+//		}
+//	};
+	
 	/**
      * Sends a pre-encoded string
      *
@@ -24,62 +42,23 @@ public:
      *
      * Throws: $(D ConnectionException) if sending fails.
      */
-	Response requestRaw(TcpSocket conn, string encoded_cmd)
+	void send(TcpSocket conn, string encoded_cmd)
     {
         debug { writeln("Request : '", escape(encoded_cmd) ~ "'"); }
         
         auto sent = conn.send(encoded_cmd);
         if (sent != (cast(byte[])encoded_cmd).length)
             throw new ConnectionException("Error while sending request");
-            
-        return receiveResponses(conn, 1)[0];
     }
 
-	Response request(TcpSocket conn, Request command)
-    {
-		string cmd = command.toString;
-        debug { writeln("Request : '", escape(cmd) ~ "'"); }
-        
-        auto sent = conn.send(cmd);
-        if (sent != (cast(byte[])cmd).length)
-            throw new ConnectionException("Error while sending request");
-            
-        return receiveResponses(conn, 1)[0];
-    }
-    
-    Response[] request(TcpSocket conn, Request[] commands)
-    in { assert(commands.length > 0); }
-    body 
-    {
-    	auto appender = appender!string();
-        foreach(c; commands)
-            appender ~= c.toString();
-            
-        debug { writeln("Request : '", escape(appender.data) ~ "'"); }
-        
-        auto sent = conn.send(appender.data);
-        if (sent != (cast(byte[])appender.data).length)
-            throw new ConnectionException("Error while sending request");
-            
-        return receiveResponses(conn, commands.length);
-    }
-
-private :
-    
-    void receive(TcpSocket conn, ref byte[] buffer)
-    {
-        byte[1024 * 16] buff;
-        size_t len = conn.receive(buff);
-        
-        if(len == 0)
-            throw new ConnectionException("Server closed the connection!");
-        else if(len == TcpSocket.ERROR)
-            throw new ConnectionException("A socket error occurred!");
-
-        buffer ~= buff[0 .. len];
-        debug { writeln("Response : ", "'" ~ escape(cast(string)buff) ~ "'", " Length : ", len); }
-    }
-    
+    /**
+     * Receive responses from redis server
+     *
+     * Params:
+     *   conn     = Connection to redis server.
+     *   minResponses = The number of multibulks you expect
+     *
+     */
     Response[] receiveResponses(TcpSocket conn, size_t minResponses = 0)
     {
         byte[] buffer;
@@ -146,10 +125,25 @@ private :
         return responses;
     }
     
-
-public:    
    /* -------- EXCEPTIONS ------------- */
  
     class ConnectionException : Exception {
         this(string msg) { super(msg); }
+    }
+
+
+private :
+    
+    void receive(TcpSocket conn, ref byte[] buffer)
+    {
+        byte[1024 * 16] buff;
+        size_t len = conn.receive(buff);
+        
+        if(len == 0)
+            throw new ConnectionException("Server closed the connection!");
+        else if(len == TcpSocket.ERROR)
+            throw new ConnectionException("A socket error occurred!");
+
+        buffer ~= buff[0 .. len];
+        debug { writeln("Response : ", "'" ~ escape(cast(string)buff) ~ "'", " Length : ", len); }
     }

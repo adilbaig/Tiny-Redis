@@ -24,8 +24,11 @@ void main()
                 auto resp = redis.send(cmd);
                 writeln(resp.toDiagnosticString());
                 
-            }catch(ConnectionException e)
-            {
+            }
+            catch(RedisResponseException e) {
+                writeln("(error) ", e.msg);
+            }
+            catch(ConnectionException e) {
                 writeln("(error) ", e.msg);
             }
         

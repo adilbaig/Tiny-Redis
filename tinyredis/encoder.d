@@ -8,20 +8,34 @@ private :
 
 public:
 
-@trusted string encode(T...)(string key, T args)
+alias toMultiBulk encode;
+
+@trusted C[] toMultiBulk(C, A)(const C[] command, A[] args) if (isSomeChar!C)
 {
-	Request r;
+	C[] buffer = command.dup;
 	
-    static if(isArray!(T) && !is(typeof(args) == immutable(char)[])) {
-        foreach(b; args)
-            r.add(b);
+	foreach(b; args) {
+        buffer ~= ' ' ~ text(b);
     }
-    else 
-        ret ~= text(args);
-        
-    return ret;
-}
     
+    return toMultiBulk(buffer);
+}
+
+@trusted C[] toMultiBulk(C, T...)(const C[] command, T args) if (isSomeChar!C)
+{
+	C[] buffer = command.dup;
+	
+	static if(!is(T == immutable(char)[])) {
+        foreach(b; args) {
+            buffer ~= ' ' ~ text(b);
+        }
+    } else {
+    	buffer ~= ' ' ~ text(args);
+    }
+    
+    return toMultiBulk(buffer);
+}
+
 @trusted C[] toMultiBulk(C)(const C[][] commands) if (isSomeChar!C)
 {
 	auto appender = appender!(C[])();
@@ -69,8 +83,13 @@ public:
 		bulk_count++;
     }
 	
+	//Nothing found? That means the string is just one Bulk
+	if(!buffer.length)  {
+		buffer = toBulk(str);
+		bulk_count++;
+	}
 	//If there's anything leftover, push it
-	if(end+1 < str.length) {
+	else if(end+1 < str.length) {
 		buffer ~= toBulk(str[end+1 .. $]);
 		bulk_count++;
 	}

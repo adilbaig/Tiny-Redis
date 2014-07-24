@@ -3,12 +3,13 @@ module tinyredis.redis;
 private:
     import std.array : appender;
     import std.socket : TcpSocket, InternetAddress;
-    import tinyredis.request;
-    import tinyredis.response;
+    import std.traits;
     
 public :
     import tinyredis.connection;
     import tinyredis.encoder;
+    import tinyredis.response;
+    import tinyredis.parser : RedisResponseException;
     
     class Redis
     {
@@ -51,22 +52,26 @@ public :
         	// FOr async calls, just flush the queue
         	// This automatically gives us PubSub
         	 
-            return cast(R)(conn.request(encode(key, args)));
+        	conn.send(toMultiBulk(key, args));
+        	Response[] r = receiveResponses(conn, 1);
+            return cast(R)(r[0]);
         }
         
         R send(R = Response)(string cmd)
         {
-            return cast(R)(conn.requestRaw(toMultiBulk(cmd)));
+        	conn.send(toMultiBulk(cmd));
+        	Response[] r = receiveResponses(conn, 1);
+            return cast(R)(r[0]);
         }
         
-        R send(R = Response)(Request r)
+        /**
+         * Send a string that is already encoded in Redis protocol
+         */
+        R sendRaw(R = Response)(string cmd)
         {
-            return cast(R)(conn.request(r));
-        }
-        
-        R sendRaw(R = Response)(string r)
-        {
-            return cast(R)(conn.requestRaw(r));
+        	conn.send(cmd);
+        	Response[] r = receiveResponses(conn, 1);
+            return cast(R)(r[0]);
         }
         
         /**
@@ -78,14 +83,14 @@ public :
          * pipeline(["SADD shopping_cart Shirt", "SADD shopping_cart Pant", "SADD shopping_cart Boots"])
          * ---
          */
-        Response[] pipeline(string[] commands)
+        Response[] pipeline(C)(C[][] commands) if (isSomeChar!C)
         {
-        	auto appender = appender!(Request[])();
-            Request[] r;
+        	auto appender = appender!(C[])();
             foreach(c; commands)
                 appender ~= encode(c);
             
-            return conn.request(appender.data);
+            conn.send(appender.data);
+        	return receiveResponses(conn, commands.length);
         }
         
         /**
@@ -106,13 +111,15 @@ public :
             cmd ~= "EXEC";
             auto rez = pipeline(cmd);
             
-            if(all)
+            if(all) {
                 return rez;
+            }
             
             auto resp = rez[$ - 1];
-            if(resp.isError())
+            if(resp.isError()) {
                 throw new RedisResponseException(resp.value);
-                
+            }
+            
             return resp.values;
         }
         
@@ -136,20 +143,21 @@ public :
          */
         Response eval(K = string, A = string)(string lua_script, K[] keys = [], A[] args = [])
         {
-            Request r;
-            
-            r.add = "EVAL";
-            r.add = lua_script;
-            r.add = keys.length;
+            string cmd = "EVAL \"" ~ string ~ "\" " ~ text(keys.length) ~ " ";
             
             foreach(k; keys)
-                r.add = k;
+                cmd ~= k ~ " ";
             foreach(a; args)
-                r.add = a;
+                cmd ~= a ~ " ";
                 
-            return send(r);
-        }
+            conn.send(cmd);
+        	Response[] r = receiveResponses(conn, 1);
+            return (r[0]);
+        };
+        
     }
+   
+   
    
 unittest
 {
