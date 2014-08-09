@@ -52,6 +52,8 @@ public :
         	// FOr async calls, just flush the queue
         	// This automatically gives us PubSub
         	 
+        	debug{ writeln(escape(toMultiBulk(key, args)));}
+        	 
         	conn.send(toMultiBulk(key, args));
         	Response[] r = receiveResponses(conn, 1);
             return cast(R)(r[0]);
@@ -59,6 +61,8 @@ public :
         
         R send(R = Response)(string cmd)
         {
+        	debug{ writeln(escape(toMultiBulk(cmd)));}
+        	
         	conn.send(toMultiBulk(cmd));
         	Response[] r = receiveResponses(conn, 1);
             return cast(R)(r[0]);
@@ -69,6 +73,8 @@ public :
          */
         R sendRaw(R = Response)(string cmd)
         {
+        	debug{ writeln(escape(cmd));}
+        	
         	conn.send(cmd);
         	Response[] r = receiveResponses(conn, 1);
             return cast(R)(r[0]);
@@ -143,14 +149,14 @@ public :
          */
         Response eval(K = string, A = string)(string lua_script, K[] keys = [], A[] args = [])
         {
-            string cmd = "EVAL \"" ~ string ~ "\" " ~ text(keys.length) ~ " ";
+            string cmd = "EVAL \"" ~ lua_script ~ "\" " ~ text(keys.length) ~ " ";
             
             foreach(k; keys)
                 cmd ~= k ~ " ";
             foreach(a; args)
                 cmd ~= a ~ " ";
-                
-            conn.send(cmd);
+
+            conn.send(toMultiBulk(cmd));
         	Response[] r = receiveResponses(conn, 1);
             return (r[0]);
         };
