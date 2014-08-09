@@ -122,23 +122,6 @@ private :
     
 unittest
 {
-    assert(toBulk("$2") == "$2\r\n$2\r\n");
-    assert(encode("GET *2").toString() == "*2\r\n$3\r\nGET\r\n$2\r\n*2\r\n");
-    assert(encode("TTL myset").toString() == "*2\r\n$3\r\nTTL\r\n$5\r\nmyset\r\n");
-    assert(encode("TTL", "myset").toString() == "*2\r\n$3\r\nTTL\r\n$5\r\nmyset\r\n");
-    
-    auto lua = "return redis.call('set','foo','bar')";
-    assert(encode("EVAL \"" ~ lua ~ "\" 0").toString() == "*3\r\n$4\r\nEVAL\r\n$"~to!(string)(lua.length)~"\r\n"~lua~"\r\n$1\r\n0\r\n");
-    assert(encode("\"" ~ lua ~ "\" \"" ~ lua ~ "\" ").toString() == "*2\r\n$"~to!(string)(lua.length)~"\r\n"~lua~"\r\n$"~to!(string)(lua.length)~"\r\n"~lua~"\r\n");
-    assert(encode("eval \"" ~ lua ~ "\" " ~ "0") == encode("eval", lua, 0));
-    
-    //Testing encode
-    assert(encode("SREM", ["myset", "$3", "$4"]).toString() == encode("SREM myset $3 $4").toString());
-    assert(encode("SREM", "myset", "$3", "$4").toString()   == encode("SREM myset $3 $4").toString());
-    assert(encode("SADD", "numbers", [1,2,3]).toString()    == encode("SADD numbers 1 2 3").toString());
-    assert(encode("TTL", "myset").toString() == encode("TTL myset").toString());
-    assert(encode("TTL", "myset").toString() == encode("TTL", ["myset"]).toString());
-    
     //Test Nil bulk
     byte[] stream = cast(byte[])"$-1\r\n";
     auto response = parseResponse(stream);
