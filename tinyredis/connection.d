@@ -10,6 +10,7 @@ private:
 
 debug {
 	import std.stdio : writeln;
+	import tinyredis.encoder : escape;
 }    
 
 public:
