@@ -60,9 +60,10 @@ alias toMultiBulk encode;
     for(size_t i = 0; i < str.length; i++) {
     	c = str[i];
     	
-    	if((c == '"' || c == '\'') && i > 0 && str[i-1] != '\\') {
-			i = endOfEvalString(str[i .. $]) + i + 1;
-			goto MULTIBULK_PROCESS; 
+    	if((c == '"' || c == '\'') && i > 0) {
+    		start = ++i;
+			i = endOfEvalString(c, str[i .. $]) + i;
+			goto MULTIBULK_PROCESS;
 		}
     	
     	if(c != ' ') {
@@ -102,16 +103,10 @@ alias toMultiBulk encode;
     return format!(C)("$%d\r\n%s\r\n", str.length, str);
 }
 
-private pure size_t endOfEvalString(C)(const C[] sub_command) if (isSomeChar!C)
+private pure size_t endOfEvalString(C)(C startChar, const C[] sub_command) if (isSomeChar!C)
 {
-	C startChar;
 	foreach(i, c; sub_command) {
-		if(i == 0) {
-			startChar = c;
-			continue;
-		}
-		
-		if(c == startChar && sub_command[i-1] != '\\') {
+		if(c == startChar && i > 0 && sub_command[i-1] != '\\') {
 			return i;
 		}
 	}
