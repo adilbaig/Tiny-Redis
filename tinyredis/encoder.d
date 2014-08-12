@@ -10,59 +10,68 @@ public:
 
 alias toMultiBulk encode;
 
-@trusted C[] toMultiBulk(C, A)(const C[] command, A[] args) if (isSomeChar!C)
+@trusted C[] toMultiBulk(C, T)(const C[] command, T[][] args) if (isSomeChar!C && isSomeChar!T)
 {
-	C[] buffer = command.dup;
+	auto buffer = appender!(C[])();
+    buffer ~= command;
 	
-	foreach(b; args) {
-        buffer ~= ' ' ~ text(b);
-    }
-    
-    return toMultiBulk(buffer);
+	foreach (i; args) {
+		buffer ~= ' ' ~ i;
+	}
+	
+	return toMultiBulk(buffer.data);
 }
 
 @trusted C[] toMultiBulk(C, T...)(const C[] command, T args) if (isSomeChar!C)
 {
-	C[] buffer = command.dup;
-	
-	static if(!is(T == immutable(char)[])) {
-        foreach(b; args) {
-            buffer ~= ' ' ~ text(b);
-        }
-    } else {
-    	buffer ~= ' ' ~ text(args);
-    }
-    
-    return toMultiBulk(buffer);
+    auto buffer = appender!(C[])();
+    buffer ~= command;
+    accumalator!(C,T)(buffer, args);
+    return toMultiBulk(buffer.data);
 }
 
 @trusted C[] toMultiBulk(C)(const C[][] commands) if (isSomeChar!C)
 {
-	auto appender = appender!(C[])();
-	appender.reserve(commands.length * 10);
+	auto app = appender!(C[])();
+	app.reserve(commands.length * 100);
     foreach(c; commands)
-        appender ~= toBulk(c);
+        app ~= toBulk(c);
 	
 	return "*" ~ to!(C[])(commands.length) ~ "\r\n" ~ appender.data;
 }
 
 @trusted C[] toMultiBulk(C)(const C[] command) if (isSomeChar!C)
 {
-    auto str = strip(command);
+    alias command str;
     
 	size_t 
 		start, 
 		end,
 		bulk_count;
-	C[] buffer;
+	
+	auto buffer = appender!(C[])();
+	buffer.reserve(cast(size_t)(command.length * 1.2)); //Reserve for 20% overhead. 
+//	debug std.stdio.writeln("COMMAND LENGTH : ", command.length, " BUFFER : ", buffer.capacity);
+	
 	C c;
 
     for(size_t i = 0; i < str.length; i++) {
     	c = str[i];
     	
-    	if((c == '"' || c == '\'') && i > 0) {
-    		start = ++i;
-			i = endOfEvalString(c, str[i .. $]) + i;
+    	/**
+    	 * Special support for quoted string so that command line support for 
+    	 	proper use of EVAL is available.
+    	*/
+    	if((c == '"' || c == '\'')) {
+    		start = i+1;
+//			debug std.stdio.writeln("START : ", start, " LENGTH : ", str.length);
+			
+			//Circuit breaker to avoid RangeViolation
+    		while(++i < str.length
+    			&& (str[i] != c || (str[i] == c && str[i-1] == '\\'))
+    			){}
+    		
+//    		debug std.stdio.writeln("QUOTED STRING : ", str[start .. i]);
 			goto MULTIBULK_PROCESS;
 		}
     	
@@ -85,8 +94,8 @@ alias toMultiBulk encode;
     }
 	
 	//Nothing found? That means the string is just one Bulk
-	if(!buffer.length)  {
-		buffer = toBulk(str);
+	if(!buffer.data.length)  {
+		buffer ~= toBulk(str);
 		bulk_count++;
 	}
 	//If there's anything leftover, push it
@@ -95,7 +104,7 @@ alias toMultiBulk encode;
 		bulk_count++;
 	}
 
-	return format!(C)("*%d\r\n%s", bulk_count, buffer);
+	return format!(C)("*%d\r\n%s", bulk_count, buffer.data);
 }
 
 @trusted C[] toBulk(C)(const C[] str) if (isSomeChar!C)
@@ -103,19 +112,45 @@ alias toMultiBulk encode;
     return format!(C)("$%d\r\n%s\r\n", str.length, str);
 }
 
-private pure size_t endOfEvalString(C)(C startChar, const C[] sub_command) if (isSomeChar!C)
+private @trusted void accumalator(C, T...)(Appender!(C[]) w, T args)
 {
-	foreach(i, c; sub_command) {
-		if(c == startChar && i > 0 && sub_command[i-1] != '\\') {
-			return i;
+	foreach (i, arg; args) {
+		static if(isSomeString!(typeof(arg))) {
+			w ~= ' ' ~ arg;
+		} else static if(isArray!(typeof(arg))) {
+			foreach(a; arg) {
+				accumalator(w, a);
+			}
+		} else {
+			w ~= ' ' ~ text(arg);
 		}
-	}
-
-	throw new Exception("Unclosed string");
+    }
 }
 
-debug :
-	@trusted C[] escape(C)(C[] str) if (isSomeChar!C)
-	{
-	     return replace(str,"\r\n","\\r\\n");
-	}
+debug @trusted C[] escape(C)(C[] str) if (isSomeChar!C)
+{
+     return replace(str,"\r\n","\\r\\n");
+}
+	
+unittest {
+	
+	assert(toBulk("$2") == "$2\r\n$2\r\n");
+    assert(encode("GET *2") == "*2\r\n$3\r\nGET\r\n$2\r\n*2\r\n");
+    assert(encode("TTL myset") == "*2\r\n$3\r\nTTL\r\n$5\r\nmyset\r\n");
+    assert(encode("TTL", "myset") == "*2\r\n$3\r\nTTL\r\n$5\r\nmyset\r\n");
+    
+    auto lua = "return redis.call('set','foo','bar')";
+    assert(encode("EVAL \"" ~ lua ~ "\" 0") == "*3\r\n$4\r\nEVAL\r\n$"~to!(string)(lua.length)~"\r\n"~lua~"\r\n$1\r\n0\r\n");
+    
+    //TODO : This assert breaks
+    assert(encode("\"" ~ lua ~ "\" \"" ~ lua ~ "\" ") == "*2\r\n$"~to!(string)(lua.length)~"\r\n"~lua~"\r\n$"~to!(string)(lua.length)~"\r\n"~lua~"\r\n");
+    assert(encode("eval \"" ~ lua ~ "\" " ~ "0") == encode("eval", "\"" ~ lua ~ "\"", 0));
+    
+    assert(encode("SREM", ["myset", "$3", "$4"]) == encode("SREM myset $3 $4"));
+    assert(encode("SREM", "myset", "$3", "$4")   == encode("SREM myset $3 $4"));
+
+    assert(encode("SADD", "numbers", [1,2,3]) == encode("SADD numbers 1 2 3"));
+    assert(encode("SADD", "numbers", 1,2,3, [4,5]) == encode("SADD numbers 1 2 3 4 5"));
+    assert(encode("TTL", "myset") == encode("TTL myset"));
+    assert(encode("TTL", "myset") == encode("TTL", ["myset"]));	
+}
