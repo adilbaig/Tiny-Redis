@@ -184,7 +184,7 @@ unittest
     
     redis.send("DEL myset");
     redis.send("SADD", "myset", 1.2);
-    redis.send!(bool)(encode("SADD", "myset", 1));
+    redis.send("SADD", "myset", 1);
     redis.send("SADD", "myset", true);
     redis.send("SADD", "myset", "adil");
     redis.send("SADD", "myset", 350001939);
@@ -234,7 +234,7 @@ unittest
     assert(responses[1].intval == 2);
     assert(responses[2].intval == 3);
     
-    response = redis.send("EVAL", "return {KEYS[1],KEYS[2],ARGV[1],ARGV[2]}", 2, "key1", "key2", "first", "second");
+    response = redis.send("EVAL", "'return {KEYS[1],KEYS[2],ARGV[1],ARGV[2]}'", 2, "key1", "key2", "first", "second");
     assert(response.values.length == 4);
     assert(response.values[0].value == "key1");
     assert(response.values[1].value == "key2");
