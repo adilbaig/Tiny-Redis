@@ -32,14 +32,22 @@ alias toMultiBulk encode;
 
 @trusted C[] toMultiBulk(C)(const C[][] commands) if (isSomeChar!C)
 {
-	auto app = appender!(C[])();
-	app.reserve(commands.length * 100);
-    foreach(c; commands)
-        app ~= toBulk(c);
+	auto buffer = appender!(C[])();
+	buffer.reserve(commands.length * 100);
 	
-	return "*" ~ to!(C[])(commands.length) ~ "\r\n" ~ appender.data;
+	buffer ~= "*";
+	buffer ~= to!(C[])(commands.length);
+	buffer ~= "\r\n";
+	
+    foreach(c; commands)
+        buffer ~= toBulk(c);
+	
+	return buffer.data;
 }
 
+/**
+ * Take a REDIS command string and convert it into a MultiBulk
+ */
 @trusted C[] toMultiBulk(C)(const C[] command) if (isSomeChar!C)
 {
     alias command str;
@@ -141,14 +149,14 @@ unittest {
     
     auto lua = "return redis.call('set','foo','bar')";
     assert(encode("EVAL \"" ~ lua ~ "\" 0") == "*3\r\n$4\r\nEVAL\r\n$"~to!(string)(lua.length)~"\r\n"~lua~"\r\n$1\r\n0\r\n");
-    
-    //TODO : This assert breaks
+
     assert(encode("\"" ~ lua ~ "\" \"" ~ lua ~ "\" ") == "*2\r\n$"~to!(string)(lua.length)~"\r\n"~lua~"\r\n$"~to!(string)(lua.length)~"\r\n"~lua~"\r\n");
     assert(encode("eval \"" ~ lua ~ "\" " ~ "0") == encode("eval", "\"" ~ lua ~ "\"", 0));
     
     assert(encode("SREM", ["myset", "$3", "$4"]) == encode("SREM myset $3 $4"));
     assert(encode("SREM", "myset", "$3", "$4")   == encode("SREM myset $3 $4"));
-
+    assert(encode(["SREM", "myset", "$3", "$4"]) == encode("SREM myset $3 $4"));
+    
     assert(encode("SADD", "numbers", [1,2,3]) == encode("SADD numbers 1 2 3"));
     assert(encode("SADD", "numbers", 1,2,3, [4,5]) == encode("SADD numbers 1 2 3 4 5"));
     assert(encode("TTL", "myset") == encode("TTL myset"));
