@@ -1,71 +1,85 @@
 import tinyredis.redis,
        std.stdio,
+       std.getopt,
        std.datetime
     ;
 
 /**
- * Make sure the redis server is running
- */
-void main()
-{
-//	====== PING_INLINE ======
-//  10000 requests completed in 0.29 seconds
-//  1 parallel clients
-//  3 bytes payload
-//  keep alive: 1
-//
-//100.00% <= 0 milliseconds
-//34602.07 requests per second
+ This benchmarking program is inspired by redis-benchmark. 
+ Although the purpose here is to test the TinyRedis driver.
+*/
 
-    /**
-     * If your redis server is not on its standard host/port, adjust it here :
-     */
-    auto redis = new Redis("localhost", 6379);
-    
-    //Lies, great lies, and benchmarks.
-    const uint reqs = 100_000;
-    
-    StopWatch sw;
-    sw.reset();
-    sw.start();
-    for(uint i = 0; i < reqs; i++)
-        redis.send("GET name");
-    sw.stop();
-    
-    auto time = sw.peek().msecs;
-    auto time_s = sw.peek().seconds;
-    writeln("INDIVIDUAL : ", reqs/time, "r/ms  [~", (reqs/time_s), "r/s].  ", reqs, " requests in ", time, "ms");
-    
+void usage(string program)
+{
+	writeln("Usage : ", program, " [-h <host>] [-p <port>] [-n <requests>]");
+	writeln("
+  -h <hostname>      Server hostname (default 127.0.0.1)
+  -p <port>          Server port (default 6379)
+  -n <requests>      Number of requests (default 100,000)
+  -P <numreq>        Pipeline <numreq> requests. (default 1) (no pipeline).
+
+  Lies, great lies, and benchmarks! This script benchmarks the TinyRedis driver with a Redis server.
+  WARNING : The script writes some data to the Redis server as part of the benchmark. Best not to run this on a production server.
+	");
+}
+
+void timeCommand(Redis redis, string command, ref StopWatch sw, const uint reqs, const uint pipeline)
+{
     sw.reset();
     sw.start();
     
-    auto str = encode("GET name").toString();
-    for(uint i = 0; i < reqs; i++)
-        redis.sendRaw(str);
-    sw.stop();
-    
-    time = sw.peek().msecs;
-    time_s = sw.peek().seconds;
-    writeln("INDIVIDUAL (RAW): ", reqs/time, "r/ms  [~", (reqs/time_s), "r/s].  ", reqs, " requests in ", time, "ms");
-    
-    sw.reset();
-    sw.start();
-    
-    //Now test with pipelining
-    const uint batchSize = 70;
-    for(uint j = 0; j < reqs; j += batchSize)
-    {
-        string[batchSize] commands = new string[batchSize];
-        
-        for(uint i = 0; i < batchSize; i++)
-            commands[i] = "GET name";
-        
-        auto response = redis.pipeline(commands);
+    auto e = encode(command);
+    if(pipeline > 1) {
+    	e = std.array.replicate(e, pipeline);
     }
     
+    for(uint i = 0; i < reqs/pipeline; i++)
+        redis.sendRaw(e);
+    
     sw.stop();
     
-    time = sw.peek().msecs;
-    time_s = sw.peek().seconds;
-    writeln("PIPELINED  : ", reqs/time, "r/ms [~", (reqs/time_s), "r/s]. ", reqs, " requests in ", time, "ms");
+    writefln("%d requests completed in %.3f seconds", reqs, sw.peek().msecs()/1_000.0);
+    writefln("%.2f requests per second", (reqs/sw.peek().msecs()) * 1000.0);
+    writeln("");
+}
+
+/**
+ * Make sure the redis server is running
+ */
+int main(string[] args)
+{
+	string host = "127.0.0.1"; 
+	ushort port = 6379;
+	uint reqs = 100_000;
+	bool help = false;
+	uint pipeline = 1;
+	
+	getopt(
+	    args,
+	    "host",  &host,
+	    "port",  &port,
+	    "requests",  &reqs,
+	    "pipeline",  &pipeline,
+	    "help",  &help
+	    );
+    
+    if(help || pipeline < 1) {
+		usage(args[0]);
+		return 1;
+	}
+
+    auto redis = new Redis(host, port);
+    
+    //Lies, great lies, and benchmarks.
+    StopWatch sw;
+    
+    redis.send("SET trbck:get 12");
+    
+    writeln("====== GET ======");
+    timeCommand(redis, "GET trbck:get", sw, reqs, pipeline);
+    
+    writeln("====== SET ======");
+    timeCommand(redis, "SET trbck:get 12", sw, reqs, pipeline);
+    
+    return 0;
 }
