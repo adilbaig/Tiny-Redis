@@ -14,9 +14,21 @@ public:
 
 alias toMultiBulk encode;
 
+/**
+ Take an array of (w|d)string arguments and concat them to a single Multibulk
+ 
+ Examples:
+ 
+ ---
+ toMultiBulk("SADD", ["fruits", "apple", "banana"]) == toMultiBulk("SADD fruits apple banana")
+ ---
+ */
+
 @trusted auto toMultiBulk(C, T)(const C[] command, T[][] args) if (isSomeChar!C && isSomeChar!T)
 {
 	auto buffer = appender!(C[])();
+	buffer.reserve(command.length + args.length * 70); //guesstimate
+	
     buffer ~= command;
 	
 	foreach (i; args) {
@@ -26,6 +38,15 @@ alias toMultiBulk encode;
 	return toMultiBulk(buffer.data);
 }
 
+/**
+ Take an array of varargs and concat them to a single Multibulk
+ 
+ Examples:
+ 
+ ---
+ toMultiBulk("SADD", "random", 1, 1.5, 'c') == toMultiBulk("SADD random 1 1.5 c")
+ ---
+ */
 @trusted auto toMultiBulk(C, T...)(const C[] command, T args) if (isSomeChar!C)
 {
     auto buffer = appender!(C[])();
@@ -33,7 +54,16 @@ alias toMultiBulk encode;
     accumalator!(C,T)(buffer, args);
     return toMultiBulk(buffer.data);
 }
-
+ 
+/**
+ Take an array of strings and concat them to a single Multibulk
+ 
+ Examples:
+ 
+ ---
+ toMultiBulk("SET", "name", "adil") == toMultiBulk("SET name adil")
+ ---
+ */
 @trusted auto toMultiBulk(C)(const C[][] commands) if (isSomeChar!C)
 {
 	auto buffer = appender!(C[])();
@@ -50,7 +80,7 @@ alias toMultiBulk encode;
 }
 
 /**
- * Take a REDIS command string and convert it into a MultiBulk
+ * Take a Redis command (w|d)string and convert it to a MultiBulk
  */
 @trusted auto toMultiBulk(C)(const C[] command) if (isSomeChar!C)
 {
