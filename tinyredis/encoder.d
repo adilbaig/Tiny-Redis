@@ -10,7 +10,7 @@ public:
 
 alias toMultiBulk encode;
 
-@trusted C[] toMultiBulk(C, T)(const C[] command, T[][] args) if (isSomeChar!C && isSomeChar!T)
+@trusted auto toMultiBulk(C, T)(const C[] command, T[][] args) if (isSomeChar!C && isSomeChar!T)
 {
 	auto buffer = appender!(C[])();
     buffer ~= command;
@@ -22,7 +22,7 @@ alias toMultiBulk encode;
 	return toMultiBulk(buffer.data);
 }
 
-@trusted C[] toMultiBulk(C, T...)(const C[] command, T args) if (isSomeChar!C)
+@trusted auto toMultiBulk(C, T...)(const C[] command, T args) if (isSomeChar!C)
 {
     auto buffer = appender!(C[])();
     buffer ~= command;
@@ -30,7 +30,7 @@ alias toMultiBulk encode;
     return toMultiBulk(buffer.data);
 }
 
-@trusted C[] toMultiBulk(C)(const C[][] commands) if (isSomeChar!C)
+@trusted auto toMultiBulk(C)(const C[][] commands) if (isSomeChar!C)
 {
 	auto buffer = appender!(C[])();
 	buffer.reserve(commands.length * 100);
@@ -48,7 +48,7 @@ alias toMultiBulk encode;
 /**
  * Take a REDIS command string and convert it into a MultiBulk
  */
-@trusted C[] toMultiBulk(C)(const C[] command) if (isSomeChar!C)
+@trusted auto toMultiBulk(C)(const C[] command) if (isSomeChar!C)
 {
     alias command str;
     
@@ -115,7 +115,7 @@ alias toMultiBulk encode;
 	return format!(C)("*%d\r\n%s", bulk_count, buffer.data);
 }
 
-@trusted C[] toBulk(C)(const C[] str) if (isSomeChar!C)
+@trusted auto toBulk(C)(const C[] str) if (isSomeChar!C)
 {
     return format!(C)("$%d\r\n%s\r\n", str.length, str);
 }
