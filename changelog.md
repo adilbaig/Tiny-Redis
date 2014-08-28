@@ -1,6 +1,21 @@
 Changelog
 =========
 
+v2.0.0 (2014-08-28)
+-------------------
+This is a major release with lots of rewriting underneath the public interfaces. The goal of this release
+was to reduce allocations and further split out functionality into different modules. The results are as follows :
+
+- The encoder has been split into it's own namespace. Various templated functions were added, and the
+	request struct has been removed. std.array.appender is used more often. Unit-tests have been maintained
+	and the encoder is fully passes all previous tests.
+- The parser remains as is.
+- The response struct is unchanged.
+- The connection class has been removed in favor of a couple of functions used with UFCS.
+- The redis class brings together the rest of the namespaces.
+
+The benchmarking script has been slightly altered to mimic redis-benchmark. 
+
 v1.2.4 (2014-05-24)
 -------------------
 - Minor bug fix
