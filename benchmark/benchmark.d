@@ -15,12 +15,12 @@ void usage(string program)
 {
 	writeln("Usage : ", program, " [-h <host>] [-p <port>] [-n <requests>]");
 	writeln("
-  -h <hostname>      Server hostname (default 127.0.0.1)
-  -p <port>          Server port (default 6379)
-  -n <requests>      Number of requests (default 100,000)
-  -P <numreq>        Pipeline <numreq> requests. (default 1) (no pipeline).
+  -h | --host <hostname>      Server hostname (default 127.0.0.1)
+  -p | --port <port>          Server port (default 6379)
+  -n | --requests <requests>  Number of requests (default 100,000)
+  -P | --pipeline <numreq>    Pipeline <numreq> requests. (default 1) (no pipeline).
 
-  Lies, great lies, and benchmarks! This script benchmarks the TinyRedis driver with a Redis server.
+  This script benchmarks the TinyRedis driver with a Redis server.
   WARNING : The script writes some data to the Redis server as part of the benchmark. Best not to run this on a production server.
 	");
 }
@@ -58,10 +58,10 @@ int main(string[] args)
 	
 	getopt(
 	    args,
-	    "host",  &host,
-	    "port",  &port,
-	    "requests",  &reqs,
-	    "pipeline",  &pipeline,
+	    "host|h",  &host,
+	    "port|p",  &port,
+	    "requests|n",  &reqs,
+	    "pipeline|P",  &pipeline,
 	    "help",  &help
 	    );
     
