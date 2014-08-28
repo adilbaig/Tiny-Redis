@@ -1,5 +1,9 @@
 module tinyredis.encoder;
 
+/**
+ * Authors: Adil Baig, adil.baig@aidezigns.com
+ */
+
 private :
 	import std.string : format, strip;
 	import std.array;

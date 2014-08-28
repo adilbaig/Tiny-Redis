@@ -1,5 +1,9 @@
 module tinyredis.parser;
 
+/**
+ * Authors: Adil Baig, adil.baig@aidezigns.com
+ */
+
 private:
     import std.conv  : to;
     

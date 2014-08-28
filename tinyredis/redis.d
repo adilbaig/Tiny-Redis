@@ -1,5 +1,9 @@
 module tinyredis.redis;
 
+/**
+ * Authors: Adil Baig, adil.baig@aidezigns.com
+ */
+
 private:
     import std.array : appender;
     import std.socket : TcpSocket, InternetAddress;
@@ -32,6 +36,7 @@ public :
          * Examples:
          *
          * ---
+         * send("SET name Adil")
          * send("SADD", "myset", 1)
          * send("SADD", "myset", 1.2)
          * send("SADD", "myset", true)
@@ -49,7 +54,7 @@ public :
         	//Implement a write queue here.
         	// All encoded responses are put into a write queue and flushed
         	// For a send request, flush the queue and listen to a response
-        	// FOr async calls, just flush the queue
+        	// For async calls, just flush the queue
         	// This automatically gives us PubSub
         	 
         	debug{ writeln(escape(toMultiBulk(key, args)));}
@@ -69,7 +74,7 @@ public :
         }
         
         /**
-         * Send a string that is already encoded in Redis protocol
+         * Send a string that is already encoded in the Redis protocol
          */
         R sendRaw(R = Response)(string cmd)
         {

@@ -1,5 +1,9 @@
 module tinyredis.response;
 
+/**
+ * Authors: Adil Baig, adil.baig@aidezigns.com
+ */
+
 private:
     import std.array : split, replace, join;
     import std.string : strip, format;

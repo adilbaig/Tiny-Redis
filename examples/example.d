@@ -3,6 +3,10 @@ import tinyredis.redis,
     ;
 
 /**
+ * Authors: Adil Baig, adil.baig@aidezigns.com
+ */
+
+/**
  * Make sure the redis server is running
  */
 void main()

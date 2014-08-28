@@ -1,5 +1,9 @@
 module tinyredis.connection;
 
+/**
+ * Authors: Adil Baig, adil.baig@aidezigns.com
+ */
+
 public:
     import std.socket : TcpSocket;
 	    
@@ -15,30 +19,11 @@ debug {
 
 public:
 
-//	struct commandQueue {
-//		string[] commands;
-//		uint pos;
-//		
-//		void enqueue(string command)
-//		{
-//			commands[++pos] = command;
-//		}
-//		
-//		string deque()
-//		{
-//			if(pos < 1) {
-//				return commands[pos];
-//			}
-//			
-//			return commands[--pos];
-//		}
-//	};
-	
 	/**
      * Sends a pre-encoded string
      *
      * Params:
-     *   conn     = Connection to redis server.
+     *   conn     	 = Connection to redis server.
      *   encoded_cmd = The command to be sent.
      *
      * Throws: $(D ConnectionException) if sending fails.
@@ -56,9 +41,10 @@ public:
      * Receive responses from redis server
      *
      * Params:
-     *   conn     = Connection to redis server.
+     *   conn    	  = Connection to redis server.
      *   minResponses = The number of multibulks you expect
      *
+     * Throws: $(D ConnectionException) if there is a socket error or server closes the connection.
      */
     Response[] receiveResponses(TcpSocket conn, size_t minResponses = 0)
     {

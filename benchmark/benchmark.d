@@ -7,6 +7,8 @@ import tinyredis.redis,
 /**
  This benchmarking program is inspired by redis-benchmark. 
  Although the purpose here is to test the TinyRedis driver.
+ 
+ Authors: Adil Baig, adil.baig@aidezigns.com
 */
 
 void usage(string program)
