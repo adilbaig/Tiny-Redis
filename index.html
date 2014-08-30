@@ -24,7 +24,7 @@
       <header>
         <h1 class="header">Tiny Redis</h1>
         <p class="header">Fast, Simple, Unit Tested. Redis driver for <a href="http://www.dlang.org">D</a></p>
-        <p>Latest Version : 1.2.4</p>
+        <p>Latest Version : 2.0.0</p>
 
         <ul>
           <li class="download"><a class="buttons" href="https://github.com/adilbaig/Tiny-Redis/releases">All platforms - Source, examples, benchmark</a></li>
@@ -50,7 +50,7 @@
 <p>With Tiny Redis you leverage your knowledge of Redis commands transparently. This minimizes the ramp-up time from learning the library to writing your application specific code. It's also simpler to build libraries on top of it.</p>
 
 <h4>fast</h4>
-<p>simple local benchmarking suggests TinyRedis can do 13,000 requests/second. With pipelining the numbers are orders of magnitudes higher. In practice, TinyRedis is fast enough to handle most real-world volumes. Watch the benchmarking space below.</p>
+<p>simple local benchmarking suggests TinyRedis can do 40,000 GETs/second. With pipelining the numbers are orders of magnitudes higher. In practice, TinyRedis is fast enough to handle most real-world volumes. Watch the benchmarking space below.</p>
 
 <h4>simple</h4>
 <p>Run any Redis command using one simple call : </p>
@@ -120,10 +120,39 @@ redis.transaction(["SET ctr = 0", "INCR ctr", "INCR ctr"]);
 
 <h2>Benchmarks</h2>
 <p>Benchmarks are heavily dependent on your machine's hardware, Linux ulimits, your Redis server version and whether you're running across a network. You may want to run the benchmarking program on your PC/Server to get a real feel for the speed for your use-case.</p>
-<p>Here are averaged results (of 3 tries) from running the benchmarking program on a Ubuntu 12.04 x64 laptop. Intel core i3 2.13Ghz, 4GB DDR2 RAM</p>
-<pre class="bash"><code>rdmd src/benchmark.d tinyredis/*
-INDIVIDUAL : 12r/msec 12000r/sec 500000 requests in 40935 msecs
-PIPELINED  : 76r/msec 76000r/sec 500000 requests in 6496 msecs
+<p>Here are the results (after 5 tries) from running the benchmarking program on a Ubuntu 14.04 x64 laptop. Intel core i5 4200M 2.5Ghz, 8GB DDR3 RAM</p>
+<pre class="bash"><code>./benchmark -n100000
+====== GET ======
+100000 requests completed in 2.409 seconds
+41000.00 requests per second
+
+====== SET ======
+100000 requests completed in 2.644 seconds
+37000.00 requests per second
+</code></pre>
+
+For comparison, here are results on the same hardware with <a href="https://github.com/redis/hiredis">hiredis</a>, the official redis driver in C.
+<pre class="bash"><code>redis-benchmark -c 1 -t get,set -n 100000
+====== SET ======
+  100000 requests completed in 2.85 seconds
+  1 parallel clients
+  3 bytes payload
+  keep alive: 1
+
+100.00% <= 2 milliseconds
+100.00% <= 3 milliseconds
+35124.70 requests per second
+
+====== GET ======
+  100000 requests completed in 2.77 seconds
+  1 parallel clients
+  3 bytes payload
+  keep alive: 1
+
+100.00% <= 1 milliseconds
+100.00% <= 2 milliseconds
+100.00% <= 4 milliseconds
+36127.17 requests per second 
 </code></pre>
 
 <h2>Compilation Instructions</h2>
