@@ -1,6 +1,10 @@
 Changelog
 =========
 
+v2.0.1 (2014-09-19)
+-------------------
+Fix dub.json importPath. Now the first offical release with DUB support.
+
 v2.0.0 (2014-08-28)
 -------------------
 This is a major release with lots of rewriting underneath the public interfaces. The goal of this release
