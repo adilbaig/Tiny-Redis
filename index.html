@@ -87,7 +87,7 @@ writeln("The name's ", redis.send("GET name")) //The name's Adil
 //Add data to a set and read it
 redis.send("SADD", "fruits", ["apples", "oranges", "bananas"]);
 auto fruits = redis.send("SMEMBERS", "fruits");
-for(fruit; fruits)
+foreach(k, fruit; fruits)
 	writeln(fruit);
 
 //Cast your results
