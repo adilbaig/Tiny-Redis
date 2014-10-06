@@ -81,6 +81,9 @@ public :
             return (type != ResponseType.Invalid);
         }
         
+        /**
+         * Support foreach(k, v; response)
+         */
         int opApply(int delegate(ulong k, Response value) dg)
         {
             if(!isArray())
@@ -88,6 +91,20 @@ public :
                 
             foreach(k, v ; values)
                 dg(k, values[k]);
+            
+            return 0;
+        }
+        
+        /**
+         * Support foreach(v; response)
+         */
+        int opApply(int delegate(Response value) dg)
+        {
+            if(!isArray())
+                return 1;
+                
+            foreach(k, v; values)
+                dg(values[k]);
             
             return 0;
         }
