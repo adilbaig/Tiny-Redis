@@ -58,7 +58,7 @@ public :
         	// This automatically gives us PubSub
         	 
         	debug{ writeln(escape(toMultiBulk(key, args)));}
-        	 
+
         	conn.send(toMultiBulk(key, args));
         	Response[] r = receiveResponses(conn, 1);
             return cast(R)(r[0]);
@@ -198,6 +198,20 @@ unittest
     assert(r.type == ResponseType.MultiBulk);
     assert(r.values.length == 6);
     
+    // Test for:
+    // tinyredis.parser.RedisResponseException@tinyredis/parser.d(110):
+    //   ERR value is not a valid float
+    {
+      import std.json;
+      JSONValue json = parseJSON("{\"a\": \"b\"}");
+      redis.send(
+        "ZADD",
+        "test_key",
+        1,
+        json.toString()
+      );
+    }
+
     //Check pipeline
     redis.send("DEL ctr");
     auto responses = redis.pipeline(["SET ctr 1", "INCR ctr", "INCR ctr", "INCR ctr", "INCR ctr"]);

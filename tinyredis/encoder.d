@@ -9,6 +9,15 @@ private :
 	import std.array;
 	import std.traits;
 	import std.conv;
+        import std.regex;
+
+        string[] redisScriptCommands = [
+	  "EVAL", // and "EVALSHA"
+	  "SCRIPT EXISTS",
+	  "SCRIPT FLUSH",
+	  "SCRIPT KILL",
+	  "SCRIPT LOAD"
+	];
 
 public:
 
@@ -158,7 +167,11 @@ private @trusted void accumalator(C, T...)(Appender!(C[]) w, T args)
 {
 	foreach (i, arg; args) {
 		static if(isSomeString!(typeof(arg))) {
-			w ~= ' ' ~ arg;
+		    if(isRedisScript(to!string(w.data))) {
+		        w ~= ' '  ~ arg;
+		    } else {
+		        w ~= ' '  ~ "'" ~ arg ~ "'";
+		    }
 		} else static if(isArray!(typeof(arg))) {
 			foreach(a; arg) {
 				accumalator(w, a);
@@ -169,6 +182,17 @@ private @trusted void accumalator(C, T...)(Appender!(C[]) w, T args)
     }
 }
 
+private @trusted bool isRedisScript(string s)
+{
+  foreach(command; redisScriptCommands) {
+    auto match = matchFirst(s, regex(r"^" ~ command, "i"));
+    if (match.captures.length > 0) {
+      return true;
+    }
+  }
+  return false;
+}
+
 debug @trusted C[] escape(C)(C[] str) if (isSomeChar!C)
 {
      return replace(str,"\r\n","\\r\\n");
@@ -176,11 +200,17 @@ debug @trusted C[] escape(C)(C[] str) if (isSomeChar!C)
 	
 unittest {
 	
-	assert(toBulk("$2") == "$2\r\n$2\r\n");
+    assert(toBulk("$2") == "$2\r\n$2\r\n");
     assert(encode("GET *2") == "*2\r\n$3\r\nGET\r\n$2\r\n*2\r\n");
     assert(encode("TTL myset") == "*2\r\n$3\r\nTTL\r\n$5\r\nmyset\r\n");
     assert(encode("TTL", "myset") == "*2\r\n$3\r\nTTL\r\n$5\r\nmyset\r\n");
     
+    {
+      import std.json;
+      JSONValue json = parseJSON("{\"a\": \"b\"}");
+      assert(toMultiBulk("ZADD", "test_key", 1, json.toString()) == "*4\r\n$4\r\nZADD\r\n$8\r\ntest_key\r\n$1\r\n1\r\n$9\r\n{\"a\":\"b\"}\r\n");
+    }
+
     auto lua = "return redis.call('set','foo','bar')";
     assert(encode("EVAL \"" ~ lua ~ "\" 0") == "*3\r\n$4\r\nEVAL\r\n$"~to!(string)(lua.length)~"\r\n"~lua~"\r\n$1\r\n0\r\n");
 
