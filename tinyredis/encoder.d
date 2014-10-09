@@ -29,13 +29,13 @@ alias toMultiBulk encode;
 	auto buffer = appender!(C[])();
 	buffer.reserve(command.length + args.length * 70); //guesstimate
 	
-    buffer ~= command;
-	
-	foreach (i; args) {
-		buffer ~= ' ' ~ i;
+	buffer ~= "*" ~ to!(C[])(args.length + 1) ~ "\r\n" ~ toBulk(command);
+    
+	foreach (c; args) {
+		buffer ~= toBulk(c);
 	}
 	
-	return toMultiBulk(buffer.data);
+	return buffer.data;
 }
 
 /**
@@ -50,9 +50,9 @@ alias toMultiBulk encode;
 @trusted auto toMultiBulk(C, T...)(const C[] command, T args) if (isSomeChar!C)
 {
     auto buffer = appender!(C[])();
-    buffer ~= command;
-    accumalator!(C,T)(buffer, args);
-    return toMultiBulk(buffer.data);
+    auto l = accumalator!(C,T)(buffer, args);
+    auto str = "*" ~ to!(C[])(l + 1) ~ "\r\n" ~ toBulk(command) ~ buffer.data;
+    return str;
 }
  
 /**
@@ -61,7 +61,7 @@ alias toMultiBulk encode;
  Examples:
  
  ---
- toMultiBulk("SET", "name", "adil") == toMultiBulk("SET name adil")
+ toMultiBulk(["SET", "name", "adil"]) == toMultiBulk("SET name adil")
  ---
  */
 @trusted auto toMultiBulk(C)(const C[][] commands) if (isSomeChar!C)
@@ -69,13 +69,12 @@ alias toMultiBulk encode;
 	auto buffer = appender!(C[])();
 	buffer.reserve(commands.length * 100);
 	
-	buffer ~= "*";
-	buffer ~= to!(C[])(commands.length);
-	buffer ~= "\r\n";
+	buffer ~= "*" ~ to!(C[])(commands.length) ~ "\r\n";
 	
-    foreach(c; commands)
+    foreach(c; commands) {
         buffer ~= toBulk(c);
-	
+	}
+    
 	return buffer.data;
 }
 
@@ -154,19 +153,25 @@ alias toMultiBulk encode;
     return format!(C)("$%d\r\n%s\r\n", str.length, str);
 }
 
-private @trusted void accumalator(C, T...)(Appender!(C[]) w, T args)
+private @trusted uint accumalator(C, T...)(Appender!(C[]) w, T args)
 {
+    uint ctr = 0;
+    
 	foreach (i, arg; args) {
 		static if(isSomeString!(typeof(arg))) {
-			w ~= ' ' ~ arg;
+			w ~= toBulk(arg);
+			ctr++;
 		} else static if(isArray!(typeof(arg))) {
 			foreach(a; arg) {
-				accumalator(w, a);
+				ctr += accumalator(w, a);
 			}
 		} else {
-			w ~= ' ' ~ text(arg);
+			w ~= toBulk(text(arg));
+			ctr++;
 		}
     }
+	
+	return ctr;
 }
 
 debug @trusted C[] escape(C)(C[] str) if (isSomeChar!C)
@@ -185,14 +190,17 @@ unittest {
     assert(encode("EVAL \"" ~ lua ~ "\" 0") == "*3\r\n$4\r\nEVAL\r\n$"~to!(string)(lua.length)~"\r\n"~lua~"\r\n$1\r\n0\r\n");
 
     assert(encode("\"" ~ lua ~ "\" \"" ~ lua ~ "\" ") == "*2\r\n$"~to!(string)(lua.length)~"\r\n"~lua~"\r\n$"~to!(string)(lua.length)~"\r\n"~lua~"\r\n");
-    assert(encode("eval \"" ~ lua ~ "\" " ~ "0") == encode("eval", "\"" ~ lua ~ "\"", 0));
+    assert(encode("eval \"" ~ lua ~ "\" " ~ "0") == encode("eval", lua, 0));
     
-    assert(encode("SREM", ["myset", "$3", "$4"]) == encode("SREM myset $3 $4"));
-    assert(encode("SREM", "myset", "$3", "$4")   == encode("SREM myset $3 $4"));
-    assert(encode(["SREM", "myset", "$3", "$4"]) == encode("SREM myset $3 $4"));
+    assert(encode("SREM", ["myset", "$3", "$4", "two words"]) == encode("SREM myset $3 $4 'two words'"));
+    assert(encode("SREM", "myset", "$3", "$4", "two words")   == encode("SREM myset $3 $4 'two words'"));
+    assert(encode(["SREM", "myset", "$3", "$4", "two words"]) == encode("SREM myset $3 $4 'two words'"));
     
     assert(encode("SADD", "numbers", [1,2,3]) == encode("SADD numbers 1 2 3"));
     assert(encode("SADD", "numbers", 1,2,3, [4,5]) == encode("SADD numbers 1 2 3 4 5"));
     assert(encode("TTL", "myset") == encode("TTL myset"));
     assert(encode("TTL", "myset") == encode("TTL", ["myset"]));	
+    
+    assert(encode("ZADD", "mysortedset", 1, "{\"a\": \"b\"}") == "*4\r\n$4\r\nZADD\r\n$11\r\nmysortedset\r\n$1\r\n1\r\n$10\r\n{\"a\": \"b\"}\r\n");
+    assert(encode("ZADD", "mysortedset", "1", "{\"a\": \"b\"}") == "*4\r\n$4\r\nZADD\r\n$11\r\nmysortedset\r\n$1\r\n1\r\n$10\r\n{\"a\": \"b\"}\r\n");
 }

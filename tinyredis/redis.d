@@ -44,8 +44,7 @@ public :
          * send("SREM", "myset", ["$3", "$4"])
          * send("SADD", "myset", object) //provided 'object' implements toString()
          * send("GET", "*") == send("GET *")
-         *
-         * //Lua scripts must enclose their script in \"
+         * send("ZADD", "my_unique_json", 1, json.toString());
          * send("EVAL", "return redis.call('set','lua','LUA')", 0); 
          * ---
          */
@@ -97,8 +96,9 @@ public :
         Response[] pipeline(C)(C[][] commands) if (isSomeChar!C)
         {
         	auto appender = appender!(C[])();
-            foreach(c; commands)
+            foreach(c; commands) {
                 appender ~= encode(c);
+            }
             
             conn.send(appender.data);
         	return receiveResponses(conn, commands.length);
@@ -135,9 +135,7 @@ public :
         }
         
         /**
-         * Execute a Lua script.
-         * 
-         * This template does not require any special escaped strings
+         * Simplified call to EVAL
          *
          * Examples:
          *
@@ -154,17 +152,17 @@ public :
          */
         Response eval(K = string, A = string)(string lua_script, K[] keys = [], A[] args = [])
         {
-            string cmd = "EVAL \"" ~ lua_script ~ "\" " ~ text(keys.length) ~ " ";
-            
-            foreach(k; keys)
-                cmd ~= k ~ " ";
-            foreach(a; args)
-                cmd ~= a ~ " ";
-
-            conn.send(toMultiBulk(cmd));
+            conn.send(toMultiBulk("EVAL", lua_script, keys.length, keys, args));
         	Response[] r = receiveResponses(conn, 1);
             return (r[0]);
-        };
+        }
+        
+        Response evalSha(K = string, A = string)(string sha1, K[] keys = [], A[] args = [])
+        {
+            conn.send(toMultiBulk("EVALSHA", sha1, keys.length, keys, args));
+            Response[] r = receiveResponses(conn, 1);
+            return (r[0]);
+        }
         
     }
    
@@ -176,13 +174,13 @@ unittest
     auto response = redis.send("LASTSAVE");
     assert(response.type == ResponseType.Integer);
     
-    assert(redis.send!(bool)("SET", "name", "adil"));
+    assert(redis.send!(bool)("SET", "name", "adil baig"));
     
     response = redis.send("GET name");
     assert(response.type == ResponseType.Bulk);
-    assert(response.value == "adil");
+    assert(response.value == "adil baig");
     
-    assert(redis.send!(string)("GET name") == "adil");
+    assert(redis.send!(string)("GET name") == "adil baig");
     
     response = redis.send("GET nonexistentkey");
     assert(response.type == ResponseType.Nil);
@@ -239,7 +237,7 @@ unittest
     assert(responses[1].intval == 2);
     assert(responses[2].intval == 3);
     
-    response = redis.send("EVAL", "'return {KEYS[1],KEYS[2],ARGV[1],ARGV[2]}'", 2, "key1", "key2", "first", "second");
+    response = redis.send("EVAL", "return {KEYS[1],KEYS[2],ARGV[1],ARGV[2]}", 2, "key1", "key2", "first", "second");
     assert(response.values.length == 4);
     assert(response.values[0].value == "key1");
     assert(response.values[1].value == "key2");
@@ -257,7 +255,7 @@ unittest
     response = redis.eval("return redis.call('set','lua','LUA_AGAIN')");
     assert(cast(string)redis.send("GET lua") == "LUA_AGAIN");
     
-    // A BLPOP /timesout to a Nil multibulk
+    // A BLPOP times out to a Nil multibulk
     response = redis.send("BLPOP nonExistentList 1");
     assert(response.isNil());
 }
