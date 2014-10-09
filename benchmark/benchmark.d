@@ -40,8 +40,8 @@ void timeCommand(Redis redis, string command, ref StopWatch sw, const uint reqs,
     
     sw.stop();
     
-    writefln("%d requests completed in %.3f seconds", reqs, sw.peek().msecs()/1_000.0);
-    writefln("%.2f requests per second", (reqs/sw.peek().msecs()) * 1000.0);
+    writefln("%d requests completed in %.3f seconds", reqs, sw.peek().msecs()/1000.0);
+    writefln("%d requests per second", cast(uint)std.math.round(reqs/(sw.peek().msecs()/1000.0)));
     writeln("");
 }
 
