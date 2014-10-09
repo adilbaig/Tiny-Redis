@@ -120,15 +120,15 @@ redis.transaction(["SET ctr = 0", "INCR ctr", "INCR ctr"]);
 
 <h2>Benchmarks</h2>
 <p>Benchmarks are heavily dependent on your machine's hardware, Linux ulimits, your Redis server version and whether you're running across a network. You may want to run the benchmarking program on your PC/Server to get a real feel for the speed for your use-case.</p>
-<p>Here are the results (after 5 tries) from running the benchmarking program on a Ubuntu 14.04 x64 laptop. Intel core i5 4200M 2.5Ghz, 8GB DDR3 RAM</p>
+<p>Here are the results (after warm-up) from running the benchmarking program on a Ubuntu 14.04 x64 laptop. Intel core i5 4200M 2.5Ghz, 8GB DDR3 RAM</p>
 <pre class="bash"><code>./benchmark -n100000
 ====== GET ======
-100000 requests completed in 2.409 seconds
-41000.00 requests per second
+100000 requests completed in 2.297 seconds
+43535 requests per second
 
 ====== SET ======
-100000 requests completed in 2.644 seconds
-37000.00 requests per second
+100000 requests completed in 2.453 seconds
+40766 requests per second
 </code></pre>
 
 For comparison, here are results on the same hardware with <a href="https://github.com/redis/hiredis">hiredis</a>, the official redis driver in C.
