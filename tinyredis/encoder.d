@@ -50,7 +50,7 @@ alias toMultiBulk encode;
 @trusted auto toMultiBulk(C, T...)(const C[] command, T args) if (isSomeChar!C)
 {
     auto buffer = appender!(C[])();
-    auto l = accumalator!(C,T)(buffer, args);
+    auto l = accumulator!(C,T)(buffer, args);
     auto str = "*" ~ to!(C[])(l + 1) ~ "\r\n" ~ toBulk(command) ~ buffer.data;
     return str;
 }
@@ -153,7 +153,7 @@ alias toMultiBulk encode;
     return format!(C)("$%d\r\n%s\r\n", str.length, str);
 }
 
-private @trusted uint accumalator(C, T...)(Appender!(C[]) w, T args)
+private @trusted uint accumulator(C, T...)(Appender!(C[]) w, T args)
 {
     uint ctr = 0;
     
@@ -163,7 +163,7 @@ private @trusted uint accumalator(C, T...)(Appender!(C[]) w, T args)
 			ctr++;
 		} else static if(isArray!(typeof(arg))) {
 			foreach(a; arg) {
-				ctr += accumalator(w, a);
+				ctr += accumulator(w, a);
 			}
 		} else {
 			w ~= toBulk(text(arg));
