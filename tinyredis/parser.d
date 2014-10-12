@@ -6,6 +6,7 @@ module tinyredis.parser;
 
 private:
     import std.conv  : to;
+    import std.range : isInputRange, isForwardRange, isBidirectionalRange, retro;
     
 public : 
 
@@ -234,16 +235,36 @@ unittest
     //Testing opApply
     stream = cast(byte[])"*0\r\n";
     response = parseResponse(stream);
-    foreach(k,v; response)
+    foreach(k, v; response)
+        assert(false, "opApply is broken");
+    foreach(v; response)
         assert(false, "opApply is broken");
     
     stream = cast(byte[])"$2\r\n$2\r\n";
     response = parseResponse(stream);
-    foreach(k,v; response)
+    foreach(k, v; response)
+        assert(false, "opApply is broken");
+    foreach(v; response)
         assert(false, "opApply is broken");
         
     stream = cast(byte[])":1000\r\n";
     response = parseResponse(stream);
-    foreach(k,v; response)
+    foreach(k, v; response)
         assert(false, "opApply is broken");
+    foreach(v; response)
+        assert(false, "opApply is broken");
+        
+    //Testing opApplyReverse
+    stream = cast(byte[])"*0\r\n";
+    response = parseResponse(stream);
+    foreach_reverse(k, v; response)
+        assert(false, "opApplyReverse is broken");
+    foreach_reverse(v; response)
+        assert(false, "opApplyReverse is broken");
+   
+        
+    //Testing ranges for Response
+    assert(isInputRange!Response);
+    assert(isForwardRange!Response);
+    assert(isBidirectionalRange!Response);
 } 

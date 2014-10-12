@@ -40,6 +40,8 @@ public :
         ResponseType type;
         int count; //Used for multibulk only. -1 is a valid multibulk. Indicates nil
         
+        private int curr;
+        
         union{
             string value;
             long intval;
@@ -81,16 +83,73 @@ public :
             return (type != ResponseType.Invalid);
         }
         
+        /*
+         * Response is a BidirectionalRange
+         */
+        @property bool empty()
+        {
+            if(!isArray()) {
+                return true;
+            }
+            
+            return (curr == values.length);
+        }
+        
+        @property auto front()
+        {
+            return values[curr];
+        }
+        
+        @property void popFront()
+        {
+            curr++;
+        }
+        
+        @property auto back()
+        {
+            return values[values.length - 1];
+        }
+    
+        @property void popBack()
+        {
+            curr--;
+        }
+        
+        // Response is a ForwardRange
+        @property auto save()
+        {
+            // Returning a copy of this struct object
+            return this;
+        }
+    
         /**
          * Support foreach(k, v; response)
          */
-        int opApply(int delegate(ulong k, Response value) dg)
+        int opApply(int delegate(size_t, Response) dg)
         {
-            if(!isArray())
+            if(!isArray()) {
                 return 1;
-                
-            foreach(k, v ; values)
-                dg(k, values[k]);
+            }
+            
+            foreach(k, v; values) {
+                dg(k, v);
+            }
+            
+            return 0;
+        }
+        
+        /**
+         * Support foreach_reverse(k, v; response)
+         */
+        int opApplyReverse(int delegate(size_t, Response) dg)
+        {
+            if(!isArray()) {
+                return 1;
+            }
+            
+            foreach_reverse(k, v; values) {
+                dg(k, v);
+            }
             
             return 0;
         }
@@ -98,13 +157,31 @@ public :
         /**
          * Support foreach(v; response)
          */
-        int opApply(int delegate(Response value) dg)
+        int opApply(int delegate(Response) dg)
         {
-            if(!isArray())
+            if(!isArray()) {
                 return 1;
-                
-            foreach(k, v; values)
-                dg(values[k]);
+            }
+            
+            foreach(v; values) {
+                dg(v);
+            }
+            
+            return 0;
+        }
+        
+        /**
+         * Support foreach_reverse(v; response)
+         */
+        int opApplyReverse(int delegate(Response) dg)
+        {
+            if(!isArray()) {
+                return 1;
+            }
+            
+            foreach_reverse(v; values) {
+                dg(v);
+            }
             
             return 0;
         }
