@@ -121,14 +121,14 @@ void main()
     
     /*
         LUA Scripts
-        Here is how you can do Raw EVAL. Note the \" at either ends of the script. That is required
+        Here is how you can do Raw EVAL. Note the  at either ends of the script. That is required
         when using send
     */
     redis.sendRaw("*3\r\n$4\r\nEVAL\r\n$8\r\nreturn 1\r\n$1\r\n0\r\n");
-    writeln(toMultiBulk("EVAL", "\"return redis.call('set','lua','LUA_AGAIN')\"", 0));
-    r = redis.send("EVAL", "\"return redis.call('set','lua','LUA_AGAIN')\"", 0);
+    writeln(toMultiBulk("EVAL", "return redis.call('set','lua','LUA_AGAIN')", 0));
+    r = redis.send("EVAL", "return redis.call('set','lua','LUA_AGAIN')", 0);
     writeln(redis.send("GET lua"));
-    r = redis.send("EVAL", "\"return {KEYS[1],KEYS[2],ARGV[1],ARGV[2]}\"", 2, "key1", "key2", "first", "second");
+    r = redis.send("EVAL", "return {KEYS[1],KEYS[2],ARGV[1],ARGV[2]}", 2, "key1", "key2", "first", "second");
     writeln(r);
     
     /* 
