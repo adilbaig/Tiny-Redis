@@ -24,7 +24,7 @@
       <header>
         <h1 class="header">Tiny Redis</h1>
         <p class="header">Fast, Simple, Unit Tested. Redis driver for <a href="http://www.dlang.org">D</a></p>
-        <p>Latest Version : 2.0.1</p>
+        <p>Latest Version : 2.0.2</p>
 
         <ul>
           <li class="download"><a class="buttons" href="https://github.com/adilbaig/Tiny-Redis/releases">All platforms - Source, examples, benchmark</a></li>
@@ -88,7 +88,7 @@ writeln("The name's ", redis.send("GET name")) //The name's Adil
 redis.send("SADD", "fruits", ["apples", "oranges", "bananas"]);
 auto fruits = redis.send("SMEMBERS", "fruits");
 foreach(k, fruit; fruits)
-	writeln(fruit);
+	writeln(k, ") ", fruit);
 
 //Cast your results
 writefln("There are %s fruits", redis.send!(uint)("SCARD", fruits)));
