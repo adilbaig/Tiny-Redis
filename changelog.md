@@ -1,9 +1,24 @@
 Changelog
 =========
 
+v2.0.2 (2014-10-12)
+-------------------
+This is a minor bug fix and feature release.
+
+- Minor changes were made to the encoder. The templated forms of the encoder now
+    bypass the single string version. This makes encoding faster, as the single string version checks the 
+    entire length of the string for escape sequences. LUA sequences don't need to be especially escaped 
+    (unless passed to the single string version). Thanks to a bug report by @arjunadeltoso .
+- Response struct now works with foreach_reverse.
+- Response struct is now a BiDirectionalRange.
+- Benchmark script now correctly reports the reqs/s.
+- Minor bug fixes.    
+
+The response struct is now a BiDirectionalRange, and supports opApply in reverse mode.
+
 v2.0.1 (2014-09-19)
 -------------------
-Fix dub.json importPath. Now the first offical release with DUB support.
+Fix dub.json importPath. Now the first official release with DUB support. Fix by @rnakano
 
 v2.0.0 (2014-08-28)
 -------------------
