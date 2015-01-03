@@ -77,36 +77,39 @@
 
 <h2>Quick Example</h2>
 <p>Without further ado : </p>
-<pre><code>import tinyredis.redis; 
+<pre><code>
+import tinyredis.redis;
+import std.stdio; 
 
-auto redis = new Redis("localhost", 6379);
+void main(){
 
-redis.send("SET name Adil");
-writeln("The name's ", redis.send("GET name")) //The name's Adil
-
-//Add data to a set and read it
-redis.send("SADD", "fruits", ["apples", "oranges", "bananas"]);
-auto fruits = redis.send("SMEMBERS", "fruits");
-foreach(k, fruit; fruits)
-	writeln(k, ") ", fruit);
-
-//Cast your results
-writefln("There are %s fruits", redis.send!(uint)("SCARD", fruits)));
-
-//intelligent opCasts for responses!
-if(redis.send("EXISTS", fruits));
-	echo "Fruits have been defined!";
-	
-//Lua scripting is supported! ..
-Response r1 = redis.eval("return {KEYS[1],KEYS[2],ARGV[1],ARGV[2]}", ["key1", "key2"], ["first", "second"]);
-writeln(r1); // [key1, key2, first, second]
-
-// .. And pipelining
-redis.pipelining(["SET person1:name Adil", "SET person1:name Batman", "SET person1:name Robin"]);
-
-//.. And transactions
-redis.transaction(["SET ctr = 0", "INCR ctr", "INCR ctr"]);
-
+    auto redis = new Redis("localhost", 6379);
+    redis.send("SET name Adil");
+    writeln("The name's ", redis.send("GET name")); //The name's Adil
+    
+    //Add data to a set and read it
+    redis.send("SADD", "fruits", ["apples", "oranges", "bananas"]);
+    auto fruits = redis.send("SMEMBERS", "fruits");
+    foreach(k, fruit; fruits)
+        writeln(k, ") ", fruit);
+    
+    //Cast your results
+    writefln("There are %s fruits", redis.send!(uint)("SCARD", fruits));
+    
+    //intelligent opCasts for responses!
+    if(redis.send("EXISTS", fruits))
+        writeln("Fruits have been defined!");
+    
+    //Lua scripting is supported! ..
+    Response r1 = redis.eval("return {KEYS[1],KEYS[2],ARGV[1],ARGV[2]}", ["key1", "key2"], ["first", "second"]);
+    writeln(r1); // [key1, key2, first, second]
+    
+    // .. And pipelining
+    redis.pipeline(["SET person1:name Adil", "SET person1:name Batman", "SET person1:name Robin"]);
+    
+    //.. And transactions
+    redis.transaction(["SET ctr 0", "INCR ctr", "INCR ctr"]);
+}
 </code></pre>
 
 <h2>Documentation</h2>
