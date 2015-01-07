@@ -10,6 +10,7 @@ private:
     import std.stdio : writeln;
     import std.algorithm : find;
     import std.conv  : to, text, ConvOverflowException;
+    import std.conv;
     import std.traits;
     
 public : 
@@ -195,7 +196,8 @@ public :
                 || is(T == short)
                 || is(T == int)
                 || is(T == long)
-                || is(T == string))
+                || is(T == string)
+		|| is(ubyte[]))
         {
             static if(is(T == bool))
                 return toBool();
@@ -203,6 +205,8 @@ public :
                 return toInt!(T)();
             else static if(is(T == string))
                 return toString();
+	    else static if(is(ubyte[]))
+	        return cast(ubyte[])(values);
         }
         
         /**
