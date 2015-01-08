@@ -195,7 +195,8 @@ public :
                 || is(T == short)
                 || is(T == int)
                 || is(T == long)
-                || is(T == string))
+                || is(T == string)
+                )
         {
             static if(is(T == bool))
                 return toBool();
@@ -203,6 +204,36 @@ public :
                 return toInt!(T)();
             else static if(is(T == string))
                 return toString();
+        }
+        
+        /**
+         * Allows casting a Response to (u)byte[]
+         */
+        C[] opCast(C : C[])() if(is(C == byte) || is(C == ubyte))
+        {
+            return toBytes!(C)();
+        }
+        
+        /**
+         * Attempts to convert a response to an array of bytes
+         * 
+         * For intvals - converts to an array of bytes that is Response.intval.sizeof long
+         * For others - casts the response of toString to C[]
+         *
+         */
+        @property @trusted C[] toBytes(C)() if(is(C == byte) || is(C == ubyte))
+        {
+            if (type == ResponseType.Integer) {
+                
+                C[] ret = new C[intval.sizeof];
+                C* bytes = cast(C*)&intval;
+                for(C i = 0; i < intval.sizeof; i++) {
+                    ret[i] = bytes[i];
+                }
+                
+                return ret;
+            } else
+                return cast(C[])toString();
         }
         
         /**

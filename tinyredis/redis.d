@@ -180,10 +180,24 @@ unittest
     assert(response.type == ResponseType.Bulk);
     assert(response.value == "adil baig");
     
+    /* START Test casting byte[] */
+    assert(cast(byte[])response == "adil baig"); //Test casting to byte[]
+    assert(cast(byte[])response == [97, 100, 105, 108, 32, 98, 97, 105, 103]);
+    
+    redis.send("SET mykey 10");
+    response = redis.send("INCR mykey");
+    assert(response.type == ResponseType.Integer);
+    assert(response.intval == 11);
+    auto bytes = (cast(ubyte[])response);
+    assert(bytes.length == response.intval.sizeof);
+    assert(bytes[0] == 11);
+    /* END Test casting byte[] */
+    
     assert(redis.send!(string)("GET name") == "adil baig");
     
     response = redis.send("GET nonexistentkey");
     assert(response.type == ResponseType.Nil);
+    assert(cast(ubyte[])response == []); 
     
     redis.send("DEL myset");
     redis.send("SADD", "myset", 1.2);
