@@ -218,22 +218,29 @@ public :
          * Attempts to convert a response to an array of bytes
          * 
          * For intvals - converts to an array of bytes that is Response.intval.sizeof long
-         * For others - casts the response of toString to C[]
+         * For Bulk - casts the string to C[]
          *
+         * Returns an empty array in all other cases;
          */
         @property @trusted C[] toBytes(C)() if(is(C == byte) || is(C == ubyte))
         {
-            if (type == ResponseType.Integer) {
-                
-                C[] ret = new C[intval.sizeof];
-                C* bytes = cast(C*)&intval;
-                for(C i = 0; i < intval.sizeof; i++) {
-                    ret[i] = bytes[i];
-                }
-                
-                return ret;
-            } else
-                return cast(C[])toString();
+            switch(type)
+            {
+                case ResponseType.Integer : 
+                    C[] ret = new C[intval.sizeof];
+                    C* bytes = cast(C*)&intval;
+                    for(C i = 0; i < intval.sizeof; i++) {
+                        ret[i] = bytes[i];
+                    }
+                    
+                    return ret;
+                    
+                case ResponseType.Bulk : 
+                    return cast(C[]) value;
+                    
+                default:
+                    return [];
+            }
         }
         
         /**
