@@ -1,6 +1,13 @@
 Changelog
 =========
 
+v.2.0.3 (2015-01-14)
+----
+This is a minor feature release.
+
+- Added ability cast Response to a (u)byte[] stream. 
+- Tested on DMD 2.066.1
+
 v2.0.2 (2014-10-12)
 -------------------
 This is a minor bug fix and feature release.
