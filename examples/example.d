@@ -29,8 +29,8 @@ void main()
     writeln("TinyRedis is ", redis.send("GET tinyredis")); //Printing the response will show you the output
     
     //And some more commands
-    writeln("Open connections : ", redis.send("CLIENT LIST"));
-    writeln("Server time : ", redis.send("TIME"));
+//    writeln("Open connections : ", redis.send("CLIENT LIST"));
+//    writeln("Server time : ", redis.send("TIME"));
     
     /*
       But there are better ways to use the driver. redis.send is a variable arguments 
@@ -101,6 +101,10 @@ void main()
     int s    = redis.send!(int)("LASTSAVE");
     string t = redis.send!(string)("GET tinyredis");
     bool b   = redis.send!(bool)("EXISTS tinyredis");
+    
+    //Test Opcast
+    if (redis.send("EXISTS", "tinyredis"))
+        writeln("'tinyredis' exists");
     
     // send can also cast the value from a string, if possible
     redis.send("SET amount 30");
