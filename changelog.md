@@ -1,11 +1,11 @@
 Changelog
 =========
 
-v.2.0.3 (2015-01-14)
+v.2.0.4 (2015-01-14)
 ----
 This is a minor feature release.
 
-- Added ability cast Response to a (u)byte[] stream. 
+- Added the ability to cast a `Response` to a `(u)byte[]` stream
 - Tested on DMD 2.066.1
 
 v2.0.2 (2014-10-12)
