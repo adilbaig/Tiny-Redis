@@ -50,7 +50,7 @@
 <p>With Tiny Redis you leverage your knowledge of Redis commands transparently. This minimizes the ramp-up time from learning the library to writing your application specific code. It's also simpler to build libraries on top of it.</p>
 
 <h4>fast</h4>
-<p>simple local benchmarking suggests TinyRedis can do 40,000 GETs/second. With pipelining the numbers are orders of magnitudes higher. In practice, TinyRedis is fast enough to handle most real-world volumes. Watch the benchmarking space below.</p>
+<p>simple local benchmarking suggests TinyRedis can do 40k+ GETs/second. With pipelining the numbers are orders of magnitudes higher. In practice, TinyRedis is fast enough to handle most real-world volumes. Watch the benchmarking space below.</p>
 
 <h4>simple</h4>
 <p>Run any Redis command using one simple call : </p>
@@ -115,14 +115,14 @@ void main(){
 <h2>Documentation</h2>
 <p>Tiny Redis has a very shallow learning curve. You learn best by using it. The following links should help you get started.</p>
 <ul>
+    <li><a href="https://github.com/adilbaig/Tiny-Redis/blob/master/examples/example.d">Example.d</a> - This file is included in the source download. It gives an overview of a variety of examples of calling commands, pipelining, doing transactions and handling/printing/iterating over results.</li>
 	<li><a href="https://github.com/adilbaig/Tiny-Redis/blob/master/tinyredis/redis.d">Primary documentation is the source</a></li>
 	<li><a href="https://github.com/adilbaig/Tiny-Redis/wiki/Tiny-Redis">Wiki - Work in progress</a></li>
-	<li><a href="https://github.com/adilbaig/Tiny-Redis/blob/master/src/example.d">Example.d</a> - This file is included in the source download. It gives an overview of a variety of examples of calling commands, pipelining, doing transactions and handling/printing/iterating over results.</li>
 	<li>You may also want to check out the unit tests in <a href="https://github.com/adilbaig/Tiny-Redis/blob/master/tinyredis/">tinyredis/*</a> </li>
 </ul>
 
 <h2>Benchmarks</h2>
-<p>Benchmarks are heavily dependent on your machine's hardware, Linux ulimits, your Redis server version and whether you're running across a network. You may want to run the benchmarking program on your PC/Server to get a real feel for the speed for your use-case.</p>
+<p>Benchmarks are heavily dependent on your machine's hardware, <a href="http://man7.org/linux/man-pages/man2/getrlimit.2.html">Linux resource limits</a>, your Redis server version and whether you're running across a network. You may want to run the benchmarking program on your PC/Server to get a real feel for your speed.</p>
 <p>Here are the results (after warm-up) from running the benchmarking program on a Ubuntu 14.04 x64 laptop. Intel core i5 4200M 2.5Ghz, 8GB DDR3 RAM</p>
 <pre class="bash"><code>./benchmark -n100000
 ====== GET ======
@@ -160,7 +160,7 @@ For comparison, here are results on the same hardware with <a href="https://gith
 
 <h2>Compilation Instructions</h2>
 <h4>Using Source</h4>
-<p>Download the source code and compile <b>tinyredis/*</b> with your source files. Works on all platforms. This is recommended if you're new to TinyRedis. Ex:</p>
+<p>Download the source code and compile <b>tinyredis/*</b> with your source files. Works on all platforms. This is recommended if you're new to TinyRedis (and currently the only way). Ex:</p>
 <pre><code>dmd YOUR_SOURCE.d tinyredis/*</code></pre>
 
 <h2>Other programs</h2>
