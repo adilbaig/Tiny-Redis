@@ -1,5 +1,8 @@
 #ECLIPSE
 .project
 .buildpath
+.dub/
+.settings/
+dub.selections.json
 
 /bin
