@@ -63,6 +63,14 @@ public :
                     break;
                 }
                 
+                 if(l == 0)
+                {
+                    response.type = ResponseType.Bulk;
+                    response.value = "";
+                    tpos = 0;
+                    mb = cast(byte[])("");
+                }
+                
                 if(l > 0)
                 {
                     if(tpos + l >= mb.length) //We dont have enough data, break!
