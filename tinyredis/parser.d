@@ -63,7 +63,7 @@ public :
                     break;
                 }
                 
-                 if(l == 0)
+                if(l == 0)
                 {
                     response.type = ResponseType.Bulk;
                     response.value = "";
