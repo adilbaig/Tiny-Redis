@@ -1,7 +1,11 @@
 Changelog
 =========
 
-v.2.0.4 (2015-01-14)
+v2.0.5 (2015-02-19)
+----
+Minor bug fix for empty Bulk
+
+v2.0.4 (2015-01-14)
 ----
 This is a minor feature release.
 
