@@ -21,9 +21,12 @@ void main()
         
         if(cmd.length > 0)
             try{
-                auto resp = redis.send(cmd);
-                writeln(resp.toDiagnosticString());
-                
+                Response resp = redis.send(cmd);
+                if (resp.isString) {
+                    writeln('"', resp.toDiagnosticString(), '"');
+                } else {
+                    writeln(resp.toDiagnosticString());
+                }
             }
             catch(RedisResponseException e) {
                 writeln("(error) ", e.msg);
