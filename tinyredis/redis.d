@@ -176,6 +176,10 @@ unittest
     
     assert(redis.send!(bool)("SET", "name", "adil baig"));
     
+    redis.send("SET emptystring ''");
+    response = redis.send("GET emptystring");
+    assert(response.value == "");
+    
     response = redis.send("GET name");
     assert(response.type == ResponseType.Bulk);
     assert(response.value == "adil baig");

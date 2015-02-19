@@ -63,20 +63,17 @@ public :
                     break;
                 }
                 
-                if(l > 0)
+                if(tpos + l >= mb.length) //We don't have enough data. Let's return an invalid response.
+                    return response;
+                else
                 {
-                    if(tpos + l >= mb.length) //We dont have enough data, break!
+                    response.value = cast(string)mb[tpos .. tpos + l];
+                    tpos += l;
+                        
+                    if(tpos + 2 > mb.length)
                         return response;
                     else
-                    {
-                        response.value = cast(string)mb[tpos .. tpos + l];
-                        tpos += l;
-                            
-                        if(tpos + 2 > mb.length)
-                            return response;
-                        else
-                            tpos += 2;
-                    }
+                        tpos += 2;
                 }
                 
                 response.type = ResponseType.Bulk;
@@ -154,6 +151,13 @@ unittest
     {
         assert(true);
     }
+    
+    //Empty Bulk
+    stream = cast(byte[])"$0\r\n\r\n";
+    response = parseResponse(stream);
+    assert(response.toString == "");
+    assert(response.toBool == false);
+    assert(cast(bool)response == false);
     
     stream = cast(byte[])"*4\r\n$3\r\nGET\r\n$1\r\n*\r\n:123\r\n+A Status Message\r\n";
     
