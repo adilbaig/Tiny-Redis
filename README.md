@@ -25,3 +25,7 @@ Thanks
 
 Adil Baig
 <br />Twitter : [@aidezigns](http://twitter.com/aidezigns)
+
+
+[![Bitdeli Badge](https://d2weczhvl823v0.cloudfront.net/adilbaig/tiny-redis/trend.png)](https://bitdeli.com/free "Bitdeli Badge")
+
