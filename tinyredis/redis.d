@@ -56,7 +56,7 @@ public :
         	// For async calls, just flush the queue
         	// This automatically gives us PubSub
         	 
-        	debug{ writeln(escape(toMultiBulk(key, args)));}
+        	debug(tinyredis) { writeln(escape(toMultiBulk(key, args)));}
         	 
         	conn.send(toMultiBulk(key, args));
         	Response[] r = receiveResponses(conn, 1);
@@ -65,7 +65,7 @@ public :
         
         R send(R = Response)(string cmd)
         {
-        	debug{ writeln(escape(toMultiBulk(cmd)));}
+        	debug(tinyredis) { writeln(escape(toMultiBulk(cmd)));}
         	
         	conn.send(toMultiBulk(cmd));
         	Response[] r = receiveResponses(conn, 1);
@@ -77,7 +77,7 @@ public :
          */
         R sendRaw(R = Response)(string cmd)
         {
-        	debug{ writeln(escape(cmd));}
+        	debug(tinyredis) { writeln(escape(cmd));}
         	
         	conn.send(cmd);
         	Response[] r = receiveResponses(conn, 1);
