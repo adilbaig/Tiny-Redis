@@ -92,7 +92,7 @@ alias toMultiBulk encode;
 	
 	auto buffer = appender!(C[])();
 	buffer.reserve(cast(size_t)(command.length * 1.2)); //Reserve for 20% overhead. 
-//	debug std.stdio.writeln("COMMAND LENGTH : ", command.length, " BUFFER : ", buffer.capacity);
+//	debug(tinyredis) std.stdio.writeln("COMMAND LENGTH : ", command.length, " BUFFER : ", buffer.capacity);
 	
 	C c;
 
@@ -105,14 +105,14 @@ alias toMultiBulk encode;
     	*/
     	if((c == '"' || c == '\'')) {
     		start = i+1;
-//			debug std.stdio.writeln("START : ", start, " LENGTH : ", str.length);
+//			debug(tinyredis) std.stdio.writeln("START : ", start, " LENGTH : ", str.length);
 			
 			//Circuit breaker to avoid RangeViolation
     		while(++i < str.length
     			&& (str[i] != c || (str[i] == c && str[i-1] == '\\'))
     			){}
     		
-//    		debug std.stdio.writeln("QUOTED STRING : ", str[start .. i]);
+//    		debug(tinyredis) std.stdio.writeln("QUOTED STRING : ", str[start .. i]);
 			goto MULTIBULK_PROCESS;
 		}
     	
@@ -174,7 +174,7 @@ private @trusted uint accumulator(C, T...)(Appender!(C[]) w, T args)
 	return ctr;
 }
 
-debug @trusted C[] escape(C)(C[] str) if (isSomeChar!C)
+debug(tinyredis) @trusted C[] escape(C)(C[] str) if (isSomeChar!C)
 {
      return replace(str,"\r\n","\\r\\n");
 }

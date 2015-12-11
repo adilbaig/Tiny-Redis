@@ -12,7 +12,7 @@ private:
     import tinyredis.parser;
     import tinyredis.response;
 
-debug {
+debug(tinyredis) {
 	import std.stdio : writeln;
 	import tinyredis.encoder : escape;
 }    
@@ -30,7 +30,7 @@ public:
      */
 	void send(TcpSocket conn, string encoded_cmd)
     {
-        debug { writeln("Request : '", escape(encoded_cmd) ~ "'"); }
+        debug(tinyredis) { writeln("Request : '", escape(encoded_cmd) ~ "'"); }
         
         auto sent = conn.send(encoded_cmd);
         if (sent != (cast(byte[])encoded_cmd).length)
@@ -57,7 +57,7 @@ public:
         {
             receive(conn, buffer);
             
-            debug{ writeln("BUFFER : ", escape(cast(string)buffer)); } 
+            debug(tinyredis) { writeln("BUFFER : ", escape(cast(string)buffer)); } 
             
             while(buffer.length > 0)
             {
@@ -96,7 +96,7 @@ public:
             
             if(buffer.length == 0 && MultiBulks.length == 0) //Make sure all the multi bulks got their data
             {
-                debug {
+                debug(tinyredis) {
                     if(minResponses > 1 && responses.length < minResponses)
                         writeln("WAITING FOR MORE RESPONSES ... ");
                 }
@@ -132,5 +132,5 @@ private :
             throw new ConnectionException("A socket error occurred!");
 
         buffer ~= buff[0 .. len];
-        debug { writeln("Response : ", "'" ~ escape(cast(string)buff) ~ "'", " Length : ", len); }
+        debug(tinyredis) { writeln("Response : ", "'" ~ escape(cast(string)buff) ~ "'", " Length : ", len); }
     }
