@@ -1,6 +1,10 @@
 Changelog
 =========
 
+v2.0.6 (2015-12-11)
+----
+Qualified debug statements with `-debug=tinyredis`
+
 v2.0.5 (2015-02-19)
 ----
 Minor bug fix for empty Bulk

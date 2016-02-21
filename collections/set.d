@@ -100,6 +100,7 @@ unittest {
     import std.range.primitives : isOutputRange;
     assert(isOutputRange!(Set, string));
     
+    // Start a redis server on 127.0.0.1:6379
     auto conn = new Redis("localhost", 6379);
     auto set  = new Set(conn, "tinyRedisUnitTestSet");
     

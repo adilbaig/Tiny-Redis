@@ -15,7 +15,7 @@ lib:
 	dmd -lib tinyredis/* -oflib/libtinyredis.a
 	
 test:
-	rdmd -debug --main -unittest tinyredis/parser.d
-	rdmd -debug --main -unittest tinyredis/encoder.d
-	rdmd -debug --main -unittest tinyredis/redis.d
-	rdmd -debug --main -unittest collections/set.d
+	rdmd -debug=tinyredis --main -unittest tinyredis/parser.d
+	rdmd -debug=tinyredis --main -unittest tinyredis/encoder.d
+	rdmd -debug=tinyredis --main -unittest tinyredis/redis.d
+	rdmd -debug=tinyredis --main -unittest collections/set.d

@@ -7,11 +7,10 @@ module tinyredis.response;
 private:
     import std.array : split, replace, join;
     import std.string : strip, format;
-    import std.stdio : writeln;
     import std.algorithm : find;
     import std.conv  : to, text, ConvOverflowException;
     import std.traits;
-    
+
 public : 
 
     const string CRLF = "\r\n";
