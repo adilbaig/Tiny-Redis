@@ -7,6 +7,7 @@ module tinyredis.parser;
 private:
     import std.conv  : to;
     import std.range : isInputRange, isForwardRange, isBidirectionalRange, retro;
+    import std.conv  : ConvOverflowException;
     
 public : 
 
