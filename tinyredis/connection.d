@@ -132,5 +132,5 @@ private :
             throw new ConnectionException("A socket error occurred!");
 
         buffer ~= buff[0 .. len];
-        debug(tinyredis) { writeln("Response : ", "'" ~ escape(cast(string)buff) ~ "'", " Length : ", len); }
+        debug(tinyredis) { writeln("Response : ", "'" ~ escape(cast(string)buffer) ~ "'", " Length : ", len); }
     }
