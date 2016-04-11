@@ -1,20 +1,26 @@
-LIB = tinyredis/*
+LIB = tinyredis/*.d
+DEPS := $(LIB) Makefile
 
-example:
+example: $(DEPS) examples/example.d
 	rdmd examples/example.d $(LIB)
-	
-console:
+
+console: $(DEPS) examples/console.d
 	rdmd examples/console.d $(LIB)
-	
-benchmark:
+
+.PHONY: benchmark
+benchmark: $(DEPS) benchmark/benchmark.d
 	rdmd benchmark/benchmark.d $(LIB)
-	
-lib:
-	mkdir lib
-	dmd -Hdlib -o- tinyredis/*
-	dmd -lib tinyredis/* -oflib/libtinyredis.a
-	
-test:
+
+.PHONY: lib
+lib: lib/libtinyredis.a
+
+lib/libtinyredis.a: $(DEPS)
+	mkdir -p lib
+	dmd -Hdlib -o- $(LIB)
+	dmd -lib $(LIB) -oflib/libtinyredis.a
+
+.PHONY: test
+test: $(DEPS) collections/set.d
 	rdmd -debug=tinyredis --main -unittest tinyredis/parser.d
 	rdmd -debug=tinyredis --main -unittest tinyredis/encoder.d
 	rdmd -debug=tinyredis --main -unittest tinyredis/redis.d
