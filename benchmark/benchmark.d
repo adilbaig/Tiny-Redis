@@ -1,7 +1,9 @@
 import tinyredis.redis,
        std.stdio,
        std.getopt,
-       std.datetime
+       std.datetime,
+       std.array,
+       std.math
     ;
 
 /**

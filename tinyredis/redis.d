@@ -8,6 +8,11 @@ private:
     import std.array : appender;
     import std.socket : TcpSocket, InternetAddress;
     import std.traits;
+
+debug(tinyredis)
+{
+    import std.stdio;
+}
     
 public :
     import tinyredis.connection;
