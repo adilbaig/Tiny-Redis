@@ -1,4 +1,5 @@
 import tinyredis.redis,
+       tinyredis.subscriber,
        std.stdio,
        std.getopt,
        std.datetime,
@@ -47,6 +48,29 @@ void timeCommand(Redis redis, string command, ref StopWatch sw, const uint reqs,
     writeln("");
 }
 
+void timePubSub(Redis redis, Subscriber subscriber, string command, ref StopWatch sw, const uint reqs, const uint pipeline)
+{
+    sw.reset();
+    sw.start();
+
+    auto e = encode(command);
+    if(pipeline > 1) {
+    	e = std.array.replicate(e, pipeline);
+    }
+
+    for(uint i = 0; i < reqs/pipeline; i++)
+    {
+        redis.sendRaw(e);
+        subscriber.processMessages();
+    }
+
+    sw.stop();
+
+    writefln("%d messages processed in %.3f seconds", reqs, sw.peek().msecs()/1000.0);
+    writefln("%d messages per second", cast(uint)std.math.round(reqs/(sw.peek().msecs()/1000.0)));
+    writeln("");
+}
+
 /**
  * Make sure the redis server is running
  */
@@ -84,6 +108,22 @@ int main(string[] args)
     
     writeln("====== SET ======");
     timeCommand(redis, "SET trbck:get 12", sw, reqs, pipeline);
-    
+
+    auto subscriber = new Subscriber();
+    ulong messages = 0;
+    ulong pmessages = 0;
+    subscriber.subscribe("my_channel", (channel, message) { ++messages; });
+    subscriber.psubscribe("my_pattern*", (pattern, channel, message) { ++pmessages; });
+
+    writeln("====== SUBSCRIBE ======");
+    timePubSub(redis, subscriber, "PUBLISH my_channel my_message", sw, reqs, pipeline);
+    if (messages != reqs)
+        writefln("WARNING: Expected %s messages, processed %s messages\n", reqs, messages);
+
+    writeln("====== PSUBSCRIBE ======");
+    timePubSub(redis, subscriber, "PUBLISH my_patternX my_message", sw, reqs, pipeline);
+    if (pmessages != reqs)
+        writefln("WARNING: Expected %s messages, processed %s messages\n", reqs, pmessages);
+
     return 0;
 }
