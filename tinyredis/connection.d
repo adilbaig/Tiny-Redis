@@ -9,6 +9,7 @@ public:
 	    
 private:
     import std.array : appender, back, popBack;
+    import std.string : format;
     import tinyredis.parser;
     import tinyredis.response;
 
@@ -125,11 +126,29 @@ private :
     {
         byte[1024 * 16] buff;
         size_t len = conn.receive(buff);
-        
-        if(len == 0)
-            throw new ConnectionException("Server closed the connection!");
-        else if(len == TcpSocket.ERROR)
-            throw new ConnectionException("A socket error occurred!");
+
+        if (conn.blocking)
+        {
+            if(len == 0)
+                throw new ConnectionException("Server closed the connection!");
+            else if(len == TcpSocket.ERROR)
+                throw new ConnectionException("A socket error occurred!");
+        }
+        else
+        {
+            if (len == -1)
+            {
+                import core.stdc.errno;
+
+                if (errno == EWOULDBLOCK)
+                {
+                    len = 0;
+                    errno = 0;
+                }
+                else
+                    throw new ConnectionException(format("A socket error occurred! errno: %s", errno));
+            }
+        }
 
         buffer ~= buff[0 .. len];
         debug(tinyredis) { writeln("Response : ", "'" ~ escape(cast(string)buffer) ~ "'", " Length : ", len); }
