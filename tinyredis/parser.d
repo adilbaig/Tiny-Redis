@@ -4,11 +4,6 @@ module tinyredis.parser;
  * Authors: Adil Baig, adil.baig@aidezigns.com
  */
 
-private:
-    import std.conv  : to;
-    import std.range : isInputRange, isForwardRange, isBidirectionalRange, retro;
-    import std.conv  : ConvOverflowException;
-    
 public : 
 
 	import tinyredis.response;
@@ -17,10 +12,12 @@ public :
      * Parse a byte stream into a Response struct. 
      *
      * The parser works to identify a minimum complete Response. If successful, it removes that chunk from "mb" and returns a Response struct.
-     * On failure it returns a ResponseType.Invalid Response and leaves "mb" untouched. 
+     * On failure it returns a `ResponseType.Invalid` Response and leaves "mb" untouched. 
      */
     @trusted Response parseResponse(ref byte[] mb)
     {
+        import std.conv : to;
+        
         Response response;
         response.type = ResponseType.Invalid;
         
@@ -198,6 +195,7 @@ unittest
     assert(stream.length == 0);
     assert(parseResponse(stream).type == ResponseType.Invalid);
 
+    import std.conv  : ConvOverflowException;
     //Long overflow checking
     stream = cast(byte[])":9223372036854775808\r\n";
     try{
@@ -267,6 +265,7 @@ unittest
     foreach_reverse(v; response)
         assert(false, "opApplyReverse is broken");
    
+    import std.range : isInputRange, isForwardRange, isBidirectionalRange;
         
     //Testing ranges for Response
     assert(isInputRange!Response);

@@ -5,11 +5,7 @@ module tinyredis.response;
  */
 
 private:
-    import std.array : split, replace, join;
-    import std.string : strip, format;
-    import std.algorithm : find;
-    import std.conv  : to, text, ConvOverflowException;
-    import std.traits;
+    import std.conv  : to, text;
 
 public : 
 
@@ -278,6 +274,8 @@ public :
         @property @trusted T toInt(T = int)()
         if(is(T == byte) || is(T == short) || is(T == int) || is(T == long))
         {
+            import std.conv : ConvOverflowException;
+            
             switch(type)
             {
                 case ResponseType.Integer : 
