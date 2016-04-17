@@ -4,8 +4,7 @@ module tinyredis.response;
  * Authors: Adil Baig, adil.baig@aidezigns.com
  */
 
-private:
-    import std.conv  : to, text;
+import std.conv : to;
 
 public : 
 
@@ -305,6 +304,8 @@ public :
          */
         @property @trusted string toString()
         {
+            import std.string: text;
+            
             switch(type)
             {
                 case ResponseType.Integer : 
@@ -328,6 +329,8 @@ public :
          */
         @property @trusted string toDiagnosticString()
         {
+            import std.string: text;
+            
             final switch(type)
             {
                 case ResponseType.Nil : 
@@ -350,7 +353,7 @@ public :
                     
                     foreach(v; values)
                         t ~= v.toDiagnosticString();
-                        
+                    
                     return text(t);
                     
                 case ResponseType.Invalid :

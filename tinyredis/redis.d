@@ -4,24 +4,23 @@ module tinyredis.redis;
  * Authors: Adil Baig, adil.baig@aidezigns.com
  */
 
-private:
-    import std.array : appender;
-    import std.socket : TcpSocket, InternetAddress;
-    import std.traits;
-
+//import std.traits;
+import tinyredis.connection;
+import tinyredis.encoder;
+import tinyredis.response;
+import tinyredis.parser : RedisResponseException;
+    
 debug(tinyredis)
 {
     import std.stdio;
 }
     
 public :
-    import tinyredis.connection;
-    import tinyredis.encoder;
-    import tinyredis.response;
-    import tinyredis.parser : RedisResponseException;
     
     class Redis
     {
+        import std.socket : TcpSocket, InternetAddress;
+        
         private:
             TcpSocket conn;
         
@@ -100,12 +99,14 @@ public :
          */
         Response[] pipeline(C)(C[][] commands) if (isSomeChar!C)
         {
-        	auto appender = appender!(C[])();
+            import std.array : appender;
+            
+        	auto app = appender!(C[])();
             foreach(c; commands) {
-                appender ~= encode(c);
+                app ~= encode(c);
             }
             
-            conn.send(appender.data);
+            conn.send(app.data);
         	return receiveResponses(conn, commands.length);
         }
         

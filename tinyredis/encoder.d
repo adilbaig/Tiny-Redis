@@ -4,10 +4,9 @@ module tinyredis.encoder;
  * Authors: Adil Baig, adil.baig@aidezigns.com
  */
 
-private :
-	import std.array : appender;
-	import std.traits : isSomeChar, isSomeString, isArray;
-	import std.conv : to, text;
+import std.array : appender;
+import std.traits : isSomeChar, isSomeString, isArray;
+import std.conv : to, text;
 
 public:
 
@@ -153,7 +152,8 @@ alias toMultiBulk encode;
 
 debug(tinyredis) @trusted C[] escape(C)(C[] str) if (isSomeChar!C)
 {
-     return replace(str,"\r\n","\\r\\n");
+    import std.string : replace;
+    return replace(str,"\r\n","\\r\\n");
 }
 
 private :

@@ -4,9 +4,9 @@ module tinyredis.parser;
  * Authors: Adil Baig, adil.baig@aidezigns.com
  */
 
-public : 
+import tinyredis.response;
 
-	import tinyredis.response;
+public : 
 
     /**
      * Parse a byte stream into a Response struct. 
