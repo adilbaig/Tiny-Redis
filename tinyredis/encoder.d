@@ -5,10 +5,9 @@ module tinyredis.encoder;
  */
 
 private :
-	import std.string : format, strip;
-	import std.array;
-	import std.traits;
-	import std.conv;
+	import std.array : appender;
+	import std.traits : isSomeChar, isSomeString, isArray;
+	import std.conv : to, text;
 
 public:
 
@@ -142,15 +141,26 @@ alias toMultiBulk encode;
 		bulk_count++;
 	}
 
+    import std.string : format;
 	return format!(C)("*%d\r\n%s", bulk_count, buffer.data);
 }
 
 @trusted auto toBulk(C)(const C[] str) if (isSomeChar!C)
 {
+    import std.string : format;
     return format!(C)("$%d\r\n%s\r\n", str.length, str);
 }
 
-private @trusted uint accumulator(C, T...)(Appender!(C[]) w, T args)
+debug(tinyredis) @trusted C[] escape(C)(C[] str) if (isSomeChar!C)
+{
+     return replace(str,"\r\n","\\r\\n");
+}
+
+private :
+
+import std.array : Appender;
+
+@trusted uint accumulator(C, T...)(Appender!(C[]) w, T args)
 {
     uint ctr = 0;
     
@@ -171,11 +181,6 @@ private @trusted uint accumulator(C, T...)(Appender!(C[]) w, T args)
 	return ctr;
 }
 
-debug(tinyredis) @trusted C[] escape(C)(C[] str) if (isSomeChar!C)
-{
-     return replace(str,"\r\n","\\r\\n");
-}
-	
 unittest {
 	
 	assert(toBulk("$2") == "$2\r\n$2\r\n");
