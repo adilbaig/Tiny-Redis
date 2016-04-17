@@ -4,13 +4,9 @@ module tinyredis.connection;
  * Authors: Adil Baig, adil.baig@aidezigns.com
  */
 
-public:
-    import std.socket : TcpSocket;
-	    
-private:
-    import std.array : appender, back, popBack;
-    import tinyredis.parser;
-    import tinyredis.response;
+import std.socket : TcpSocket;	    
+import tinyredis.parser;
+import tinyredis.response;
 
 debug(tinyredis) {
 	import std.stdio : writeln;
@@ -48,6 +44,8 @@ public:
      */
     Response[] receiveResponses(TcpSocket conn, size_t minResponses = 0)
     {
+        import std.array : appender, back, popBack;
+        
         byte[] buffer;
         Response[] responses;
         Response*[] MultiBulks; //Stack of pointers to multibulks
