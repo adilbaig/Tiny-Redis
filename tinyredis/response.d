@@ -304,7 +304,7 @@ public :
          */
         @property @trusted string toString()
         {
-            import std.string: text;
+            import std.conv : text;
             
             switch(type)
             {
@@ -329,7 +329,7 @@ public :
          */
         @property @trusted string toDiagnosticString()
         {
-            import std.string: text;
+            import std.conv : text;
             
             final switch(type)
             {

@@ -4,7 +4,6 @@ module tinyredis.redis;
  * Authors: Adil Baig, adil.baig@aidezigns.com
  */
 
-//import std.traits;
 import tinyredis.connection;
 import tinyredis.encoder;
 import tinyredis.response;
@@ -97,6 +96,7 @@ public :
          * pipeline(["SADD shopping_cart Shirt", "SADD shopping_cart Pant", "SADD shopping_cart Boots"])
          * ---
          */
+        import std.traits : isSomeChar;
         Response[] pipeline(C)(C[][] commands) if (isSomeChar!C)
         {
             import std.array : appender;
