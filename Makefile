@@ -1,15 +1,15 @@
-LIB = tinyredis/*.d
+LIB = source/tinyredis/*.d
 DEPS := $(LIB) Makefile
 
 example: $(DEPS) examples/example.d
-	rdmd examples/example.d $(LIB)
+	rdmd -Isource examples/example.d
 
 console: $(DEPS) examples/console.d
-	rdmd examples/console.d $(LIB)
+	rdmd -Isource examples/console.d
 
 .PHONY: benchmark
 benchmark: $(DEPS) benchmark/benchmark.d
-	rdmd benchmark/benchmark.d $(LIB)
+	rdmd -Isource benchmark/benchmark.d
 
 .PHONY: lib
 lib: lib/libtinyredis.a
@@ -21,7 +21,7 @@ lib/libtinyredis.a: $(DEPS)
 
 .PHONY: test
 test: $(DEPS) collections/set.d
-	rdmd -debug=tinyredis --main -unittest tinyredis/parser.d
-	rdmd -debug=tinyredis --main -unittest tinyredis/encoder.d
-	rdmd -debug=tinyredis --main -unittest tinyredis/redis.d
-	rdmd -debug=tinyredis --main -unittest collections/set.d
+	rdmd -debug=tinyredis --main -unittest -Isource source/tinyredis/parser.d
+	rdmd -debug=tinyredis --main -unittest -Isource source/tinyredis/encoder.d
+	rdmd -debug=tinyredis --main -unittest -Isource source/tinyredis/redis.d
+	rdmd -debug=tinyredis --main -unittest -Isource collections/set.d

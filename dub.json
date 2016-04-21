@@ -4,8 +4,6 @@
     "authors": ["Adil Baig"],
     "homepage": "http://adilbaig.github.com/Tiny-Redis/",
     "license": "ISC",
-    "sourcePaths": ["tinyredis"],
-    "importPaths": ["tinyredis"],
     "configurations": [
         {
             "name": "default",
