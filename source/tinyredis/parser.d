@@ -111,14 +111,13 @@ private :
     @safe pure bool getData(const(byte[]) mb, ref byte[] data)
     {
         foreach(p, byte c; mb)
-            if(c == 13) //'\r'
+            if(c == 13) {//'\r' 
+                data ~= mb[0 .. p];
                 return true;
-            else
-                data ~= c;
-
+            }
+    	
         return false;
     }
-
 
 unittest
 {
