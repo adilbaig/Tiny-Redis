@@ -50,16 +50,26 @@ private:
 
     /**
      * Poll responses from the redis server and queue for later processing unless they match the
-     * predicate. Return the last matching response.
+     * predicate.
+     *
+     * This function is the workhorse behind all member functions of this type.
+     *
+     * @param pred - The predicate function that determines whether a response is an expected one
+     * @param expected - The number of responses expected to match the predicate
+     * @return - The last response that matched the predicate
      */
-    Response queueExcept(bool delegate(Response) pred, size_t expected = 1)
+    Response queueUnless(bool delegate(Response) pred, size_t expected = 1)
     {
         Response resp;
         size_t matched = 0;
 
+        /* We will receive responses until all 'expected' responses are found. */
+
         // TODO - Timeout?
         while (matched < expected) {
             Response[] responses = receiveResponses(conn, 1);
+
+            // This group may have zero or many matching responses
 
             while (!responses.empty) {
                 auto found = responses.find!pred;
@@ -67,16 +77,27 @@ private:
                 // Enqueue older responses for later processing
                 queue ~= responses[0 .. $ - found.length];
 
-                responses = found;
-                if (!responses.empty) {
-                    resp = responses.front;
-                    responses.popFront;
+                if (!found.empty)
+                {
+                    resp = found.front;
+                    responses = found[1 .. $];
                     ++matched;
                 }
+                else
+                    break;
             }
         }
 
         return resp;
+    }
+
+    /**
+     * Convenience wrapper for queueUnless(), which constructs a delegate from the provided message
+     * type.
+     */
+    Response queueUnlessType(string type)(size_t expected = 1)
+    {
+        return queueUnless(r => r.isType!type, expected);
     }
 
     /**
@@ -96,12 +117,6 @@ private:
         string element(size_t index)
         {
             return elements[index].value;
-        }
-
-        if (elements.length < 2)
-        {
-            reportBadResponse();
-            return;
         }
 
         string type = element(0);
@@ -180,7 +195,7 @@ public:
         auto cmd = "SUBSCRIBE " ~ channel;
         send(cmd);
 
-        Response resp = queueExcept(r => r.isType!"subscribe");
+        Response resp = queueUnlessType!"subscribe"();
         callbacks[channel] = callback;
 
         return resp.values[2].to!int;
@@ -196,7 +211,7 @@ public:
         auto cmd = "PSUBSCRIBE " ~ pattern;
         send(cmd);
 
-        Response resp = queueExcept(r => r.isType!"psubscribe");
+        Response resp = queueUnlessType!"psubscribe"();
         pCallbacks[pattern] = callback;
 
         return resp.values[2].to!int;
@@ -212,7 +227,7 @@ public:
         auto cmd = "UNSUBSCRIBE " ~ channel;
         send(cmd);
 
-        Response resp = queueExcept(r => r.isType!"unsubscribe");
+        Response resp = queueUnlessType!"unsubscribe"();
         callbacks.remove(channel);
 
         return resp.values[2].to!int;
@@ -228,7 +243,7 @@ public:
         auto cmd = "UNSUBSCRIBE";
         send(cmd);
 
-        Response resp = queueExcept(r => r.isType!"unsubscribe", callbacks.length);
+        Response resp = queueUnlessType!"unsubscribe"(callbacks.length);
         callbacks = null;
 
         return resp.values[2].to!int;
@@ -244,7 +259,7 @@ public:
         auto cmd = "PUNSUBSCRIBE " ~ pattern;
         send(cmd);
 
-        Response resp = queueExcept(r => r.isType!"punsubscribe");
+        Response resp = queueUnlessType!"punsubscribe"();
         pCallbacks.remove(pattern);
 
         return resp.values[2].to!int;
@@ -260,7 +275,7 @@ public:
         auto cmd = "PUNSUBSCRIBE";
         send(cmd);
 
-        Response resp = queueExcept(r => r.isType!"punsubscribe", pCallbacks.length);
+        Response resp = queueUnlessType!"punsubscribe"(pCallbacks.length);
         pCallbacks = null;
 
         return resp.values[2].to!int;
@@ -274,7 +289,7 @@ public:
         auto cmd = "QUIT";
         send(cmd);
 
-        Response resp = queueExcept(r => r.value == "OK");
+        Response resp = queueUnless(r => r.value == "OK");
 
         return resp;
     }
@@ -287,7 +302,7 @@ public:
         auto cmd = "PING " ~ argument;
 
         send(cmd);
-        Response resp = queueExcept(r => r.isType!"pong");
+        Response resp = queueUnless(r => r.isType!"pong");
 
         return resp;
     }
