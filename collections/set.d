@@ -1,6 +1,6 @@
 module collections.set;
 
-import tinyredis.redis;
+import tinyredis;
 
 /**
   Set 
