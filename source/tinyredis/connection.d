@@ -16,21 +16,20 @@ debug(tinyredis) {
 public:
 
 	/**
-     * Sends a pre-encoded string
+     * Sends a pre-encoded string.
+     * Returns true if the complete message was sent.
      *
      * Params:
-     *   conn     	 = Connection to redis server.
-     *   encoded_cmd = The command to be sent.
+     *   conn     	= Connection to redis server.
+     *   encodedCmd = The command to be sent.
      *
-     * Throws: $(D ConnectionException) if sending fails.
+     * Returns: bool 
      */
-	void send(TcpSocket conn, string encoded_cmd)
+	bool send(TcpSocket conn, string encodedCmd) @nogc nothrow
     {
-        debug(tinyredis) { writeln("Request : '", escape(encoded_cmd) ~ "'"); }
+        debug(tinyredis) { writeln("Request : '", escape(encodedCmd) ~ "'"); }
 
-        auto sent = conn.send(encoded_cmd);
-        if (sent != (cast(byte[])encoded_cmd).length)
-            throw new ConnectionException("Error while sending request");
+        return (conn.send(encoded_cmd) == (cast(byte[])encodedCmd).length);
     }
 
     /**
