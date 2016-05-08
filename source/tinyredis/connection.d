@@ -15,23 +15,6 @@ debug(tinyredis) {
 
 public:
 
-	/**
-     * Sends a pre-encoded string.
-     * Returns true if the complete message was sent.
-     *
-     * Params:
-     *   conn     	= Connection to redis server.
-     *   encodedCmd = The command to be sent.
-     *
-     * Returns: bool 
-     */
-	bool send(TcpSocket conn, string encodedCmd) @nogc nothrow
-    {
-        debug(tinyredis) { writeln("Request : '", escape(encodedCmd) ~ "'"); }
-
-        return (conn.send(encoded_cmd) == (cast(byte[])encodedCmd).length);
-    }
-
     /**
      * Receive responses from redis server
      *
