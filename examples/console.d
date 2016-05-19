@@ -1,5 +1,8 @@
 import tinyredis.redis,
        tinyredis.subscriber,
+       tinyredis.connection,
+       tinyredis.response,
+       tinyredis.parser,
        std.stdio,
        std.string,
        std.algorithm,

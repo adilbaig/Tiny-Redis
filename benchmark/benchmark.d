@@ -1,5 +1,6 @@
 import tinyredis.redis,
        tinyredis.subscriber,
+       tinyredis.encoder,
        std.stdio,
        std.getopt,
        std.datetime,
