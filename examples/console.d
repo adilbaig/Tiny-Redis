@@ -41,7 +41,7 @@ void main()
     auto redis = new Redis();     // Regular connection
     auto sub = new Subscriber();  // Subscription connection
     size_t subCount = 0;          // Number of current subscriptions
-    bool isSubscribed = false;    // Which connection to ping on (Reddis's response differs)
+    bool isSubscribed = false;    // Which connection to ping on (Redis's response differs)
 
     char[] buf;
 

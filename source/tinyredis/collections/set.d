@@ -1,6 +1,6 @@
-module collections.set;
+module tinyredis.collections.set;
 
-import tinyredis;
+import tinyredis : Redis, Response;
 
 /**
   Set 

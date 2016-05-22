@@ -1,4 +1,4 @@
-LIB = source/tinyredis/*.d
+LIB = source/tinyredis/*.d source/tinyredis/collections/*.d
 DEPS := $(LIB) Makefile
 
 example: $(DEPS) examples/example.d
@@ -20,8 +20,8 @@ lib/libtinyredis.a: $(DEPS)
 	dmd -lib $(LIB) -oflib/libtinyredis.a
 
 .PHONY: test
-test: $(DEPS) collections/set.d
+test: $(DEPS)
 	rdmd -debug=tinyredis --main -unittest -Isource source/tinyredis/parser.d
 	rdmd -debug=tinyredis --main -unittest -Isource source/tinyredis/encoder.d
 	rdmd -debug=tinyredis --main -unittest -Isource source/tinyredis/redis.d
-	rdmd -debug=tinyredis --main -unittest -Isource collections/set.d
+	rdmd -debug=tinyredis --main -unittest -Isource source/tinyredis/collections/set.d

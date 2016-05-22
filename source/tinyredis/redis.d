@@ -19,7 +19,6 @@ public :
     class Redis
     {
         import std.socket : TcpSocket, InternetAddress;
-        import std.traits : isSomeChar;
 
         private:
             TcpSocket conn;
