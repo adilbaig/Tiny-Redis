@@ -1,6 +1,15 @@
 Changelog
 =========
 
+v2.1.0 (2016-06-10)
+----
+Bumped up to 2.1, due to new features in this release.
+- dub.json has been spruced up to provide feature parity with the Makefile.
+- Updated to dmd 2.071. 
+- PubSub!
+- tinyredis.collections.
+
+
 v2.0.6 (2015-12-11)
 ----
 Qualified debug statements with `-debug=tinyredis`
