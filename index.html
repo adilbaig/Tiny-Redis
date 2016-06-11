@@ -38,16 +38,16 @@
       <section>
         <h1>Introduction</h1>
 
-<p>Tiny Redis is a Redis driver for the <a href="http://www.dlang.org">D programming language</a>. It is intentionally minimal, fast, simple, intuitive, clean, unit tested, forward compatible, has no dependencies and makes working with Redis trivial.</p>
+<p>TinyRedis is a Redis driver for the <a href="http://www.dlang.org">D programming language</a>. It is intentionally minimal, fast, simple, intuitive, clean, unit tested, forward compatible, has no dependencies and makes working with Redis trivial.</p>
 <p>It supports all of Redis's data types; <a href="http://redis.io/commands#generic">keys</a>, 
 <a href="http://redis.io/commands#hash">hashes</a>,
 <a href="http://redis.io/commands#list">lists</a> and
 <a href="http://redis.io/commands#set">sets</a>. There's also support for <a href="http://redis.io/commands/eval">Lua scripting</a>, <a href="http://redis.io/topics/pipelining">pipelining</a> and <a href="http://redis.io/topics/transactions">transactions</a>.</p>
 
-<h2>Tiny Redis is ..</h2>
+<h2>TinyRedis is ..</h2>
 
 <h4>intentionally minimal</h4>
-<p>With Tiny Redis you leverage your knowledge of Redis commands transparently. This minimizes the ramp-up time from learning the library to writing your application specific code. It's also simpler to build libraries on top of it.</p>
+<p>With TinyRedis you leverage your knowledge of Redis commands transparently. This minimizes the ramp-up time from learning the library to writing your application specific code. It's also simpler to build libraries on top of it.</p>
 
 <h4>fast</h4>
 <p>simple local benchmarking suggests TinyRedis can do 40k+ GETs/second. With pipelining the numbers are orders of magnitudes higher. In practice, TinyRedis is fast enough to handle most real-world volumes. Watch the benchmarking space below.</p>
@@ -67,7 +67,7 @@
 <p>The parser and the driver have unit tests that ship with source.</p>
 
 <h4>forward compatible</h4>
-<p>Due to Tiny Redis' minimalist approach, any new commands introduced by Redis can be queried using the same API (as long as the protocol remains intact).</p>
+<p>Due to TinyRedis' minimalist approach, any new commands introduced by Redis can be queried using the same API (as long as the protocol remains intact).</p>
 
 <h4>has no dependencies</h4>
 <p>A modern D2 dmd compiler is all you need.</p>
@@ -78,7 +78,7 @@
 <h2>Quick Example</h2>
 <p>Without further ado : </p>
 <pre><code>
-import tinyredis.redis;
+import tinyredis;
 import std.stdio; 
 
 void main(){
@@ -112,13 +112,92 @@ void main(){
 }
 </code></pre>
 
+<h2>Collections</h2>
+<p>TinyRedis aims to create a series of OOP wrappers over Redis data structures. Currently, there is the <a href="https://github.com/adilbaig/Tiny-Redis/tree/master/source/tinyredis/collections">Set</a> class.</p>
+<pre><code>
+import tinyredis;
+import std.stdio; 
+
+void main(){
+
+    auto conn = new Redis("localhost", 6379);
+    auto set  = new Set(conn, "tinyRedisUnitTestSet");
+    
+    set = ["banana", "apple", "orange"]; // data can be assigned using opAssign
+    set.put("grapes"); //the put() function appends a value
+     
+    assert(set.scard() == 4); // runs the SCARD command, presents a proper count of the set ON THE SERVER
+    assert(set.count() == 4); // count is an alias for SCARD command
+    
+    //opAssign resets the data
+    set = ["guava", "pear"];
+    assert(set.scard() == 2);
+    
+    set ~= "banana"; // implements opOpAssign so ~= appends data
+    set ~= "apple";
+    set ~= ["orange", "mango"];
+    set ~= "apple"; //DUPLICATE!
+    set -= "mango"; //Not mango season!
+    assert(set.count() == 5);
+    
+    import std.algorithm.searching : canFind;
+    foreach(fruit; set.smembers())
+        assert(["guava", "pear", "banana", "apple", "orange"].canFind(fruit.toString));
+}
+</code></pre>
+
+<h2>PubSub</h2>
+<p><a href="http://redis.io/topics/pubsub">PubSub</a> is a lightweight messaging solution built on top of Redis. It allows existing Redis clients to broadcast (1-1 or 1-many) and receive messages in an asynchronous fashion. TinyRedis supports PubSub using the <a href="https://github.com/adilbaig/Tiny-Redis/blob/master/source/tinyredis/subscriber.d">Subscriber</a> class. See examples below : </p>
+<pre><code>
+import tinyredis;
+import std.stdio; 
+import std.socket;
+
+/**
+ * Callback function for SUBSCRIBE messages.
+ */
+void handleMessage(string channel, string message)
+{
+    writefln("Channel '%s': %s", channel, message);
+}
+
+/**
+ * Callback function for PSUBSCRIBE messages.
+ */
+void handlePatternMessage(string pattern, string channel, string message)
+{
+    writefln("Channel '%s' (matching '%s'): %s", channel, pattern, message);
+}
+
+void main(){
+
+	auto redis = new Redis();
+
+    auto sub = new Subscriber();
+    sub.subscribe("MYROOM", toDelegate(&handleMessage))); // Does a SUBSCRIBE
+    
+    // Now, let's publish something
+    redis.send("PUBLISH", "Hello RoomMates!"); 
+    
+    sub.unsubscribe("MYROOM");
+    
+    // Subscribe to glob-style patterns in order to receive all the messages sent to channel names matching a given pattern
+    sub.psubscribe("news.*", toDelegate(&handleMessage))); // Does a PSUBSCRIBE
+    
+    redis.send("news.international", "International News");
+    redis.send("news.domestic", "Something local"); 
+    
+    sub.punsubscribe("news.*");
+    
+}
+</code></pre>
+
 <h2>Documentation</h2>
-<p>Tiny Redis has a very shallow learning curve. You learn best by using it. The following links should help you get started.</p>
+<p>TinyRedis has a very shallow learning curve. You learn best by using it. The following links should help you get started.</p>
 <ul>
     <li><a href="https://github.com/adilbaig/Tiny-Redis/blob/master/examples/example.d">Example.d</a> - This file is included in the source download. It gives an overview of a variety of examples of calling commands, pipelining, doing transactions and handling/printing/iterating over results.</li>
-	<li><a href="https://github.com/adilbaig/Tiny-Redis/blob/master/tinyredis/redis.d">Primary documentation is the source</a></li>
-	<li><a href="https://github.com/adilbaig/Tiny-Redis/wiki/Tiny-Redis">Wiki - Work in progress</a></li>
-	<li>You may also want to check out the unit tests in <a href="https://github.com/adilbaig/Tiny-Redis/blob/master/tinyredis/">tinyredis/*</a> </li>
+	<li><a href="https://github.com/adilbaig/Tiny-Redis/blob/master/source/tinyredis/redis.d">Primary documentation is the source</a></li>
+	<li>You may also want to check out the unit tests in <a href="https://github.com/adilbaig/Tiny-Redis/tree/master/source/tinyredis">tinyredis/*</a> </li>
 </ul>
 
 <h2>Benchmarks</h2>
@@ -186,11 +265,6 @@ For comparison, here are results on the same hardware with <a href="https://gith
 <p>None, except a standard D2 compiler. Tested with DMD 2.059/2.060/2.065/2.066.1/2.071 on Linux x64.</p>
 <p>D1 is not supported.</p>
 
-<h2>Limitations</h2>
-<ul>
-<li>Pub/Sub and the "monitor" command need special support. Not done yet.</li>
-</ul>
-
 <h2>Support and Feedback</h2>
 <p>For feedback, bug reports or feature requests create a <b><a href="https://github.com/adilbaig/Tiny-Redis/issues">support ticket</a></b> on github. Feel free to suggest code improvements, new features or anything else. Thanks! </p>
 
@@ -200,7 +274,7 @@ For comparison, here are results on the same hardware with <a href="https://gith
 
   </section>
   <a id="forkme" href="https://github.com/adilbaig/Tiny-Redis">
-  	<img src="images/github-banner.png" alt="fork Tiny Redis on github">
+  	<img src="images/github-banner.png" alt="fork TinyRedis on github">
   	</a>
 </div>
     <!--[if !IE]><script>fixScale(document);</script><![endif]-->
