@@ -97,7 +97,7 @@ class Set
 
 unittest {
     
-    import std.range.primitives : isOutputRange;
+    import std.range : isOutputRange;
     assert(isOutputRange!(Set, string));
     
     // Start a redis server on 127.0.0.1:6379
@@ -123,7 +123,7 @@ unittest {
     set -= "mango"; //Not mango season!
     assert(set.count() == 5);
     
-    import std.algorithm.searching : canFind;
+    import std.algorithm : canFind;
     foreach(fruit; set.smembers())
         assert(["guava", "pear", "banana", "apple", "orange"].canFind(fruit.toString));
     
