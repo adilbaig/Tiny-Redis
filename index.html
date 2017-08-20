@@ -90,12 +90,12 @@ There's also support for :
 
 <h2>Quick Example</h2>
 <p>Without further ado : </p>
-<pre><code>
+<pre><code language="dlang">
 import tinyredis;
 import std.stdio; 
 
-void main(){
-
+void main()
+{
     auto redis = new Redis("localhost", 6379);
     redis.send("SET name Adil");
     writeln("The name's ", redis.send("GET name")); //The name's Adil
@@ -103,15 +103,13 @@ void main(){
     //Add data to a set and read it
     redis.send("SADD", "fruits", ["apples", "oranges", "bananas"]);
     auto fruits = redis.send("SMEMBERS", "fruits");
-    foreach(k, fruit; fruits)
-        writeln(k, ") ", fruit);
+    foreach(k, fruit; fruits) writeln(k, ") ", fruit);
     
     //Cast your results
-    writefln("There are %s fruits", redis.send!(uint)("SCARD", fruits));
+    writefln("There are %s fruits", redis.send("SCARD fruits"));
     
     //intelligent opCasts for responses!
-    if(redis.send("EXISTS", fruits))
-        writeln("Fruits have been defined!");
+    if(redis.send("EXISTS", fruits)) writeln("Fruits have been defined!");
     
     //Lua scripting is supported! ..
     Response r1 = redis.eval("return {KEYS[1],KEYS[2],ARGV[1],ARGV[2]}", ["key1", "key2"], ["first", "second"]);
@@ -127,12 +125,13 @@ void main(){
 
 <h2>Collections</h2>
 <p>TinyRedis aims to create a series of OOP wrappers over Redis data structures. Currently, there is the <a href="https://github.com/adilbaig/Tiny-Redis/tree/master/source/tinyredis/collections">Set</a> class.</p>
-<pre><code>
+<pre><code language="dlang">
 import tinyredis;
+import tinyredis.collections.set;
 import std.stdio; 
 
-void main(){
-
+void main()
+{
     auto conn = new Redis("localhost", 6379);
     auto set  = new Set(conn, "tinyRedisUnitTestSet");
     
@@ -146,62 +145,52 @@ void main(){
     
     set ~= "banana"; // implements opOpAssign so ~= appends data
     set ~= ["orange", "mango", "apple"];
-    set -= "mango"; //Oops, not mango season!
+    set -= "mango"; // Oops, not mango season!
     assert(set.count() == 5);
     
     import std.algorithm.searching : canFind;
-    foreach(fruit; set.smembers())
+    foreach (fruit; set.smembers()) {
         assert(["guava", "pear", "banana", "apple", "orange"].canFind(fruit.toString));
+    }
 }
 </code></pre>
 
 <h2>PubSub</h2>
 <p><a href="http://redis.io/topics/pubsub">PubSub</a> is a lightweight messaging solution built on top of Redis. It allows any Redis client to broadcast and receive messages in an asynchronous fashion. TinyRedis supports PubSub using the <a href="https://github.com/adilbaig/Tiny-Redis/blob/master/source/tinyredis/subscriber.d">Subscriber</a> class. See examples below : </p>
-<pre><code>
+<pre><code language="dlang">
 import tinyredis;
+import tinyredis.subscriber;
 import std.stdio; 
 import std.socket;
+import std.functional;
 
-/**
- * Callback function for SUBSCRIBE messages.
- */
 void handleMessage(string channel, string message)
 {
     writefln("Channel '%s': %s", channel, message);
 }
 
-/**
- * Callback function for PSUBSCRIBE messages.
- */
 void handlePatternMessage(string pattern, string channel, string message)
 {
     writefln("Channel '%s' (matching '%s'): %s", channel, pattern, message);
 }
 
-void main(){
+void main()
+{
+    auto redis = new Redis(); // client used for sending
+    auto subscriber = new Subscriber();
+    
+    subscriber.subscribe("MYROOM", toDelegate(&handleMessage));
+    scope (exit) subscriber.unsubscribe("MYROOM");
 
-    auto redis = new Redis();
-    auto sub = new Subscriber();
-    
-    // Let's SUBCRIBE to a channel, MYROOM
-    sub.subscribe("MYROOM", toDelegate(&handleMessage)));
-    
-    // Now, let's publish something
-    redis.send("PUBLISH", "Hello RoomMates!"); 
-    sub.unsubscribe("MYROOM");
+    redis.send("PUBLISH", "MYROOM", "Hello RoomMates!");
+    subscriber.processMessages();
 
-    /* 
-    * Subscribe to glob-style patterns in order to 
-    * receive all the messages sent to channel names matching a given pattern    
-    * Here we subscribe to for 'news.*'
-    */
-    sub.psubscribe("news.*", toDelegate(&handleMessage))); // Does a PSUBSCRIBE
-    
-    redis.send("news.international", "International News");
-    redis.send("news.domestic", "Something local"); 
-    
-    sub.punsubscribe("news.*");
-    
+    subscriber.psubscribe("news.*", toDelegate(&handlePatternMessage));
+    scope(exit) subscriber.punsubscribe("news.*");
+
+    redis.send("PUBLISH", "news.international", "International News");
+    redis.send("PUBLISH", "news.domestic", "Something local");
+    subscriber.processMessages();
 }
 </code></pre>
 
