@@ -97,7 +97,7 @@ import std.stdio;
 void main()
 {
     auto redis = new Redis("localhost", 6379);
-    redis.send("SET name Adil");
+    redis.send("SET", "name", "Adil");
     writeln("The name's ", redis.send("GET name")); //The name's Adil
     
     //Add data to a set and read it
@@ -106,10 +106,10 @@ void main()
     foreach(k, fruit; fruits) writeln(k, ") ", fruit);
     
     //Cast your results
-    writefln("There are %s fruits", redis.send("SCARD fruits"));
+    writefln("There are %s fruits", redis.send("SCARD", "fruits"));
     
     //intelligent opCasts for responses!
-    if(redis.send("EXISTS", fruits)) writeln("Fruits have been defined!");
+    if(redis.send("EXISTS", "fruits")) writeln("Fruits have been defined!");
     
     //Lua scripting is supported! ..
     Response r1 = redis.eval("return {KEYS[1],KEYS[2],ARGV[1],ARGV[2]}", ["key1", "key2"], ["first", "second"]);
@@ -128,7 +128,6 @@ void main()
 <pre><code language="dlang">
 import tinyredis;
 import tinyredis.collections.set;
-import std.stdio; 
 
 void main()
 {
@@ -149,7 +148,8 @@ void main()
     assert(set.count() == 5);
     
     import std.algorithm.searching : canFind;
-    foreach (fruit; set.smembers()) {
+    foreach (fruit; set.smembers())
+    {
         assert(["guava", "pear", "banana", "apple", "orange"].canFind(fruit.toString));
     }
 }
@@ -164,28 +164,21 @@ import std.stdio;
 import std.socket;
 import std.functional;
 
-void handleMessage(string channel, string message)
-{
-    writefln("Channel '%s': %s", channel, message);
-}
-
-void handlePatternMessage(string pattern, string channel, string message)
-{
-    writefln("Channel '%s' (matching '%s'): %s", channel, pattern, message);
-}
-
 void main()
 {
     auto redis = new Redis(); // client used for sending
     auto subscriber = new Subscriber();
     
-    subscriber.subscribe("MYROOM", toDelegate(&handleMessage));
+    subscriber.subscribe("MYROOM",
+        (channel, message) => writefln("Channel '%s': %s", channel, message));
     scope (exit) subscriber.unsubscribe("MYROOM");
 
     redis.send("PUBLISH", "MYROOM", "Hello RoomMates!");
     subscriber.processMessages();
 
-    subscriber.psubscribe("news.*", toDelegate(&handlePatternMessage));
+    subscriber.psubscribe("news.*",
+        (string pattern, string channel, string message) =>
+            writefln("Channel '%s' (matching '%s'): %s", channel, pattern, message));
     scope(exit) subscriber.punsubscribe("news.*");
 
     redis.send("PUBLISH", "news.international", "International News");
