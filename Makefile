@@ -3,12 +3,12 @@ default: test
 test:
 	dub test --debug=tinyredis
 
-.PHONY:
+.PHONY: benchmark
 benchmark:
 	dub run --config=benchmark
 
 console:
-	dub build --config=console
+	dub run --config=console
 	
 example:
 	dub run --config=example
