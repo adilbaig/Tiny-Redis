@@ -1,27 +1,20 @@
-LIB = source/tinyredis/*.d source/tinyredis/collections/*.d
-DEPS := $(LIB) Makefile
+default: test
 
-example: $(DEPS) examples/example.d
-	rdmd -Isource examples/example.d
+test:
+	dub test --debug=tinyredis
 
-console: $(DEPS) examples/console.d
-	rdmd -Isource examples/console.d
+.PHONY:
+benchmark:
+	dub run --config=benchmark
 
-.PHONY: benchmark
-benchmark: $(DEPS) benchmark/benchmark.d
-	rdmd -Isource benchmark/benchmark.d
-
-.PHONY: lib
-lib: lib/libtinyredis.a
-
-lib/libtinyredis.a: $(DEPS)
-	mkdir -p lib
-	dmd -Hdlib -o- $(LIB)
-	dmd -lib $(LIB) -oflib/libtinyredis.a
-
-.PHONY: test
-test: $(DEPS)
-	rdmd -debug=tinyredis --main -unittest -Isource source/tinyredis/parser.d
-	rdmd -debug=tinyredis --main -unittest -Isource source/tinyredis/encoder.d
-	rdmd -debug=tinyredis --main -unittest -Isource source/tinyredis/redis.d
-	rdmd -debug=tinyredis --main -unittest -Isource source/tinyredis/collections/set.d
+console:
+	dub build --config=console
+	
+example:
+	dub run --config=example
+	
+lib:
+	dub build --config=library
+	
+clean:
+	dub clean
