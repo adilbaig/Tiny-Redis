@@ -4,6 +4,7 @@
     "authors": ["Adil Baig"],
     "homepage": "http://adilbaig.github.com/Tiny-Redis/",
     "license": "ISC",
+    "targetPath": "bin/",	
     "configurations": [
         {
             "name": "library",
@@ -12,19 +13,19 @@
         {
             "name": "example",
             "mainSourceFile" : "examples/example.d",
-            "targetName": "bin/example",
+            "targetName": "example",
             "targetType": "executable",
         },
         {
             "name": "console",
             "mainSourceFile" : "examples/console.d",
-            "targetName": "bin/console",
+            "targetName": "console",
             "targetType": "executable",
         },
         {
             "name": "benchmark",
             "mainSourceFile" : "benchmark/benchmark.d",
-            "targetName": "bin/benchmark",
+            "targetName": "benchmark",
             "targetType": "executable",
         }
     ]
