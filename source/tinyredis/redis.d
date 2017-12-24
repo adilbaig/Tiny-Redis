@@ -7,7 +7,7 @@ module tinyredis.redis;
 import tinyredis.connection;
 import tinyredis.encoder;
 import tinyredis.response;
-import tinyredis.parser : RedisResponseException;
+import tinyredis.decoder : RedisResponseException;
 
 debug(tinyredis)
 {

@@ -9,7 +9,7 @@ public:
 	    
 private:
     import std.string : format;
-    import tinyredis.parser;
+    import tinyredis.decoder;
     import tinyredis.response;
 
 debug(tinyredis) {

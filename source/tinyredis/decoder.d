@@ -1,4 +1,4 @@
-module tinyredis.parser;
+module tinyredis.decoder;
 
 /**
  * Authors: Adil Baig, adil.baig@aidezigns.com
