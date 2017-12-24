@@ -8,25 +8,25 @@
     "configurations": [
         {
             "name": "library",
-            "targetType": "library",
+            "targetType": "library"
         },
         {
             "name": "example",
             "mainSourceFile" : "examples/example.d",
             "targetName": "example",
-            "targetType": "executable",
+            "targetType": "executable"
         },
         {
             "name": "console",
             "mainSourceFile" : "examples/console.d",
             "targetName": "console",
-            "targetType": "executable",
+            "targetType": "executable"
         },
         {
             "name": "benchmark",
             "mainSourceFile" : "benchmark/benchmark.d",
             "targetName": "benchmark",
-            "targetType": "executable",
+            "targetType": "executable"
         }
     ]
 }
