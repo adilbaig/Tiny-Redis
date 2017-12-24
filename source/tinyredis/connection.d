@@ -64,7 +64,7 @@ public:
             while(buffer.length > 0)
             {
                 auto r = parseResponse(buffer);
-                if(r.type == ResponseType.Invalid)
+                if(r.type == ResponseType.Invalid) // This occurs when the buffer is incomplete. Pull more
                      break;
 
                 *stackPtr ~= r;
