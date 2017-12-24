@@ -53,14 +53,14 @@ public:
 
         byte[] buffer;
         Response[] responses;
+
+
         Response*[] MultiBulks; //Stack of pointers to multibulks
-        Response[]* stackPtr = &responses;
+        Response[]* stackPtr = &responses; // This is the stack where new elements are pushed
 
         while(true)
         {
             receive(conn, buffer);
-
-            debug(tinyredis) { writeln("BUFFER : ", escape(cast(string)buffer)); }
 
             while(buffer.length > 0)
             {
@@ -69,32 +69,29 @@ public:
                      break;
 
                 *stackPtr ~= r;
-                if(r.type == ResponseType.MultiBulk)
+                if(r.type == ResponseType.MultiBulk && r.count > 0)
                 {
                     auto mb = &((*stackPtr)[$-1]);
-                    if(mb.count > 0)
-                    {
-                        MultiBulks ~= mb;
-                        stackPtr = &((*mb).values);
-                    }
+                    MultiBulks ~= mb;
+                    stackPtr = &((*mb).values);
                 }
-                else
-                    while(MultiBulks.length > 0)
+
+                while(MultiBulks.length > 0)
+                {
+                    auto mb = *(MultiBulks.back);
+
+                    if(mb.count == mb.values.length)
                     {
-                        auto mb = *(MultiBulks.back);
+                        MultiBulks.popBack();
 
-                        if(mb.count == mb.values.length)
-                        {
-                            MultiBulks.popBack();
-
-                            if(MultiBulks.length > 0)
-                                stackPtr = &((*MultiBulks.back).values);
-                            else
-                                stackPtr = &responses;
-                        }
+                        if(MultiBulks.length > 0)
+                            stackPtr = &((*MultiBulks.back).values);
                         else
-                            break;
+                            stackPtr = &responses;
                     }
+                    else
+                        break;
+                }
             }
 
             if(buffer.length == 0 && MultiBulks.length == 0) //Make sure all the multi bulks got their data
