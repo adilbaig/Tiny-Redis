@@ -8,7 +8,6 @@ public:
     import std.socket : TcpSocket;
 	    
 private:
-    import std.array : appender, back, popBack;
     import std.string : format;
     import tinyredis.parser;
     import tinyredis.response;
@@ -49,7 +48,7 @@ public:
      */
     Response[] receiveResponses(TcpSocket conn, size_t minResponses = 0)
     {
-        import std.array : appender, back, popBack;
+        import std.array : back, popBack;
 
         byte[] buffer;
         Response[] responses;
@@ -83,11 +82,7 @@ public:
                     if(mb.count == mb.values.length)
                     {
                         MultiBulks.popBack();
-
-                        if(MultiBulks.length > 0)
-                            stackPtr = &((*MultiBulks.back).values);
-                        else
-                            stackPtr = &responses;
+                        stackPtr = (MultiBulks.length > 0) ? &((*MultiBulks.back).values) : &responses;
                     }
                     else
                         break;
