@@ -6,6 +6,7 @@ module tinyredis.connection;
 
 public:
     import std.socket : TcpSocket;
+    version(Windows) import core.sys.windows.winsock2: EWOULDBLOCK;
 	    
 private:
     import std.string : format;
