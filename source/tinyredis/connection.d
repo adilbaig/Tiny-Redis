@@ -8,14 +8,14 @@ public:
     import std.socket : TcpSocket;
 	    
 private:
-    import std.array : appender, back, popBack;
-    import tinyredis.parser;
+    import std.string : format;
+    import tinyredis.decoder;
     import tinyredis.response;
 
 debug(tinyredis) {
 	import std.stdio : writeln;
 	import tinyredis.encoder : escape;
-}    
+}
 
 public:
 
@@ -31,7 +31,7 @@ public:
 	void send(TcpSocket conn, string encoded_cmd)
     {
         debug(tinyredis) { writeln("Request : '", escape(encoded_cmd) ~ "'"); }
-        
+
         auto sent = conn.send(encoded_cmd);
         if (sent != (cast(byte[])encoded_cmd).length)
             throw new ConnectionException("Error while sending request");
@@ -48,89 +48,102 @@ public:
      */
     Response[] receiveResponses(TcpSocket conn, size_t minResponses = 0)
     {
+        import std.array : back, popBack;
+
         byte[] buffer;
         Response[] responses;
+
+
         Response*[] MultiBulks; //Stack of pointers to multibulks
-        Response[]* stackPtr = &responses;
-        
+        Response[]* stackPtr = &responses; // This is the stack where new elements are pushed
+
         while(true)
         {
             receive(conn, buffer);
-            
-            debug(tinyredis) { writeln("BUFFER : ", escape(cast(string)buffer)); } 
-            
+
             while(buffer.length > 0)
             {
                 auto r = parseResponse(buffer);
-                if(r.type == ResponseType.Invalid)
+                if(r.type == ResponseType.Invalid) // This occurs when the buffer is incomplete. Pull more
                      break;
-               
+
                 *stackPtr ~= r;
-                if(r.type == ResponseType.MultiBulk)
+                if(r.type == ResponseType.MultiBulk && r.count > 0)
                 {
                     auto mb = &((*stackPtr)[$-1]);
-                    if(mb.count > 0)
-                    {
-                        MultiBulks ~= mb;
-                        stackPtr = &((*mb).values);
-                    }
+                    MultiBulks ~= mb;
+                    stackPtr = &((*mb).values);
                 }
-                else
-                    while(MultiBulks.length > 0)
+
+                while(MultiBulks.length > 0)
+                {
+                    auto mb = *(MultiBulks.back);
+
+                    if(mb.count == mb.values.length)
                     {
-                        auto mb = *(MultiBulks.back);
-                        
-                        if(mb.count == mb.values.length)
-                        {
-                            MultiBulks.popBack();
-                            
-                            if(MultiBulks.length > 0)
-                                stackPtr = &((*MultiBulks.back).values);
-                            else
-                                stackPtr = &responses;
-                        }
-                        else
-                            break;
+                        MultiBulks.popBack();
+                        stackPtr = (MultiBulks.length > 0) ? &((*MultiBulks.back).values) : &responses;
                     }
+                    else
+                        break;
+                }
             }
-            
+
             if(buffer.length == 0 && MultiBulks.length == 0) //Make sure all the multi bulks got their data
             {
                 debug(tinyredis) {
                     if(minResponses > 1 && responses.length < minResponses)
                         writeln("WAITING FOR MORE RESPONSES ... ");
                 }
-                    
+
                 if(responses.length < minResponses)
                     continue;
-                    
+
                 break;
             }
-                
+
         }
-        
+
         return responses;
     }
-    
+
    /* -------- EXCEPTIONS ------------- */
- 
+
     class ConnectionException : Exception {
         this(string msg) { super(msg); }
     }
 
 
 private :
-    
+
     void receive(TcpSocket conn, ref byte[] buffer)
     {
         byte[1024 * 16] buff;
         size_t len = conn.receive(buff);
-        
-        if(len == 0)
-            throw new ConnectionException("Server closed the connection!");
-        else if(len == TcpSocket.ERROR)
-            throw new ConnectionException("A socket error occurred!");
+
+        if (conn.blocking)
+        {
+            if(len == 0)
+                throw new ConnectionException("Server closed the connection!");
+            else if(len == TcpSocket.ERROR)
+                throw new ConnectionException("A socket error occurred!");
+        }
+        else
+        {
+            if (len == -1)
+            {
+                import core.stdc.errno;
+
+                if (errno == EWOULDBLOCK)
+                {
+                    len = 0;
+                    errno = 0;
+                }
+                else
+                    throw new ConnectionException(format("A socket error occurred! errno: %s", errno));
+            }
+        }
 
         buffer ~= buff[0 .. len];
-        debug(tinyredis) { writeln("Response : ", "'" ~ escape(cast(string)buff) ~ "'", " Length : ", len); }
+        debug(tinyredis) { writeln("Response : ", "'" ~ escape(cast(string)buffer) ~ "'", " Length : ", len); }
     }

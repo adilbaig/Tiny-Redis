@@ -4,24 +4,27 @@ module tinyredis.redis;
  * Authors: Adil Baig, adil.baig@aidezigns.com
  */
 
-private:
-    import std.array : appender;
-    import std.socket : TcpSocket, InternetAddress;
-    import std.traits;
-    
+import tinyredis.connection;
+import tinyredis.encoder;
+import tinyredis.response;
+import tinyredis.decoder : RedisResponseException;
+
+debug(tinyredis)
+{
+    import std.stdio;
+}
+
 public :
-    import tinyredis.connection;
-    import tinyredis.encoder;
-    import tinyredis.response;
-    import tinyredis.parser : RedisResponseException;
-    
+
     class Redis
     {
+        import std.socket : TcpSocket, InternetAddress;
+
         private:
             TcpSocket conn;
-        
+
         public:
-        
+
         /**
          * Create a new connection to the Redis server
          */
@@ -29,7 +32,7 @@ public :
         {
             conn = new TcpSocket(new InternetAddress(host, port));
         }
-        
+
         /**
          * Call Redis using any type T that can be converted to a string
          *
@@ -45,7 +48,7 @@ public :
          * send("SADD", "myset", object) //provided 'object' implements toString()
          * send("GET", "*") == send("GET *")
          * send("ZADD", "my_unique_json", 1, json.toString());
-         * send("EVAL", "return redis.call('set','lua','LUA')", 0); 
+         * send("EVAL", "return redis.call('set','lua','LUA')", 0);
          * ---
          */
         R send(R = Response, T...)(string key, T args)
@@ -55,35 +58,35 @@ public :
         	// For a send request, flush the queue and listen to a response
         	// For async calls, just flush the queue
         	// This automatically gives us PubSub
-        	 
+
         	debug(tinyredis) { writeln(escape(toMultiBulk(key, args)));}
-        	 
+
         	conn.send(toMultiBulk(key, args));
         	Response[] r = receiveResponses(conn, 1);
             return cast(R)(r[0]);
         }
-        
+
         R send(R = Response)(string cmd)
         {
         	debug(tinyredis) { writeln(escape(toMultiBulk(cmd)));}
-        	
+
         	conn.send(toMultiBulk(cmd));
         	Response[] r = receiveResponses(conn, 1);
             return cast(R)(r[0]);
         }
-        
+
         /**
          * Send a string that is already encoded in the Redis protocol
          */
         R sendRaw(R = Response)(string cmd)
         {
         	debug(tinyredis) { writeln(escape(cmd));}
-        	
+
         	conn.send(cmd);
         	Response[] r = receiveResponses(conn, 1);
             return cast(R)(r[0]);
         }
-        
+
         /**
          * Send a series of commands as a pipeline
          *
@@ -93,21 +96,24 @@ public :
          * pipeline(["SADD shopping_cart Shirt", "SADD shopping_cart Pant", "SADD shopping_cart Boots"])
          * ---
          */
+        import std.traits : isSomeChar;
         Response[] pipeline(C)(C[][] commands) if (isSomeChar!C)
         {
-        	auto appender = appender!(C[])();
+            import std.array : appender;
+
+        	auto app = appender!(C[])();
             foreach(c; commands) {
-                appender ~= encode(c);
+                app ~= encode(c);
             }
-            
-            conn.send(appender.data);
+
+            conn.send(app.data);
         	return receiveResponses(conn, commands.length);
         }
-        
+
         /**
          * Execute commands in a MULTI/EXEC block.
-         * 
-         * @param all - (Default: false) - By default, only the results of a transaction are returned. If set to "true", the results of each queuing step is also returned. 
+         *
+         * @param all - (Default: false) - By default, only the results of a transaction are returned. If set to "true", the results of each queuing step is also returned.
          *
          * Examples:
          *
@@ -121,19 +127,19 @@ public :
             cmd ~= commands;
             cmd ~= "EXEC";
             auto rez = pipeline(cmd);
-            
+
             if(all) {
                 return rez;
             }
-            
+
             auto resp = rez[$ - 1];
             if(resp.isError()) {
                 throw new RedisResponseException(resp.value);
             }
-            
+
             return resp.values;
         }
-        
+
         /**
          * Simplified call to EVAL
          *
@@ -142,7 +148,7 @@ public :
          * ---
          * Response r = eval("return redis.call('set','lua','LUA_AGAIN')");
          * r.value == "LUA_AGAIN";
-         * 
+         *
          * Response r1 = redis.eval("return {KEYS[1],KEYS[2],ARGV[1],ARGV[2]}", ["key1", "key2"], ["first", "second"]);
          * writeln(r1); // [key1, key2, first, second]
          *
@@ -156,38 +162,38 @@ public :
         	Response[] r = receiveResponses(conn, 1);
             return (r[0]);
         }
-        
+
         Response evalSha(K = string, A = string)(string sha1, K[] keys = [], A[] args = [])
         {
             conn.send(toMultiBulk("EVALSHA", sha1, keys.length, keys, args));
             Response[] r = receiveResponses(conn, 1);
             return (r[0]);
         }
-        
+
     }
-   
-   
-   
+
+
+
 unittest
 {
     auto redis = new Redis();
     auto response = redis.send("LASTSAVE");
     assert(response.type == ResponseType.Integer);
-    
+
     assert(redis.send!(bool)("SET", "name", "adil baig"));
-    
+
     redis.send("SET emptystring ''");
     response = redis.send("GET emptystring");
     assert(response.value == "");
-    
+
     response = redis.send("GET name");
     assert(response.type == ResponseType.Bulk);
     assert(response.value == "adil baig");
-    
+
     /* START Test casting byte[] */
     assert(cast(byte[])response == "adil baig"); //Test casting to byte[]
     assert(cast(byte[])response == [97, 100, 105, 108, 32, 98, 97, 105, 103]);
-    
+
     redis.send("SET mykey 10");
     response = redis.send("INCR mykey");
     assert(response.type == ResponseType.Integer);
@@ -196,13 +202,13 @@ unittest
     assert(bytes.length == response.intval.sizeof);
     assert(bytes[0] == 11);
     /* END Test casting byte[] */
-    
+
     assert(redis.send!(string)("GET name") == "adil baig");
-    
+
     response = redis.send("GET nonexistentkey");
     assert(response.type == ResponseType.Nil);
-    assert(cast(ubyte[])response == []); 
-    
+    assert(cast(ubyte[])response == []);
+
     redis.send("DEL myset");
     redis.send("SADD", "myset", 1.2);
     redis.send("SADD", "myset", 1);
@@ -213,18 +219,18 @@ unittest
     auto r = redis.send("SMEMBERS myset");
     assert(r.type == ResponseType.MultiBulk);
     assert(r.values.length == 6);
-    
+
     //Check pipeline
     redis.send("DEL ctr");
     auto responses = redis.pipeline(["SET ctr 1", "INCR ctr", "INCR ctr", "INCR ctr", "INCR ctr"]);
-    
+
     assert(responses.length == 5);
     assert(responses[0].type == ResponseType.Status);
     assert(responses[1].intval == 2);
     assert(responses[2].intval == 3);
     assert(responses[3].intval == 4);
     assert(responses[4].intval == 5);
-    
+
     redis.send("DEL buddies");
     auto buddiesQ = ["SADD buddies Batman", "SADD buddies Spiderman", "SADD buddies Hulk", "SMEMBERS buddies"];
     Response[] buddies = redis.pipeline(buddiesQ);
@@ -234,7 +240,7 @@ unittest
     assert(buddies[2].type == ResponseType.Integer);
     assert(buddies[3].type == ResponseType.MultiBulk);
     assert(buddies[3].values.length == 3);
-    
+
     //Check transaction
     redis.send("DEL ctr");
     responses = redis.transaction(["SET ctr 1", "INCR ctr", "INCR ctr"], true);
@@ -247,21 +253,21 @@ unittest
     assert(responses[4].values[0].type == ResponseType.Status);
     assert(responses[4].values[1].intval == 2);
     assert(responses[4].values[2].intval == 3);
-    
+
     redis.send("DEL ctr");
     responses = redis.transaction(["SET ctr 1", "INCR ctr", "INCR ctr"]);
     assert(responses.length == 3);
     assert(responses[0].type == ResponseType.Status);
     assert(responses[1].intval == 2);
     assert(responses[2].intval == 3);
-    
+
     response = redis.send("EVAL", "return {KEYS[1],KEYS[2],ARGV[1],ARGV[2]}", 2, "key1", "key2", "first", "second");
     assert(response.values.length == 4);
     assert(response.values[0].value == "key1");
     assert(response.values[1].value == "key2");
     assert(response.values[2].value == "first");
     assert(response.values[3].value == "second");
-    
+
     //Same as above, but simpler
     response = redis.eval("return {KEYS[1],KEYS[2],ARGV[1],ARGV[2]}", ["key1", "key2"], ["first", "second"]);
     assert(response.values.length == 4);
@@ -269,10 +275,10 @@ unittest
     assert(response.values[1].value == "key2");
     assert(response.values[2].value == "first");
     assert(response.values[3].value == "second");
-    
+
     response = redis.eval("return redis.call('set','lua','LUA_AGAIN')");
     assert(cast(string)redis.send("GET lua") == "LUA_AGAIN");
-    
+
     // A BLPOP times out to a Nil multibulk
     response = redis.send("BLPOP nonExistentList 1");
     assert(response.isNil());

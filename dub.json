@@ -1,9 +1,32 @@
 {
-	"name": "tinyredis",
-	"description": "Redis driver for D.",
-	"authors": ["Adil Baig"],
-	"homepage": "http://adilbaig.github.com/Tiny-Redis/",
-	"license": "ISC",
-	"sourcePaths": ["tinyredis"],
-	"importPaths": ["."]
+    "name": "tinyredis",
+    "description": "Redis driver for D.",
+    "authors": ["Adil Baig"],
+    "homepage": "http://adilbaig.github.com/Tiny-Redis/",
+    "license": "ISC",
+    "targetPath": "bin/",	
+    "configurations": [
+        {
+            "name": "library",
+            "targetType": "library"
+        },
+        {
+            "name": "example",
+            "mainSourceFile" : "examples/example.d",
+            "targetName": "example",
+            "targetType": "executable"
+        },
+        {
+            "name": "console",
+            "mainSourceFile" : "examples/console.d",
+            "targetName": "console",
+            "targetType": "executable"
+        },
+        {
+            "name": "benchmark",
+            "mainSourceFile" : "benchmark/benchmark.d",
+            "targetName": "benchmark",
+            "targetType": "executable"
+        }
+    ]
 }

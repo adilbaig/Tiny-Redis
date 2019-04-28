@@ -3,6 +3,13 @@
 .buildpath
 .dub/
 .settings/
+
+#IntelliJ
+.idea/workspace.xml
+.idea/tasks.xml
+
+# DUB
 dub.selections.json
 
-/bin
+# TinyRedis
+libtinyredis.a
