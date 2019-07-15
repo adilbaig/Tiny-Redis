@@ -141,13 +141,13 @@ alias encode = toMultiBulk;
 	}
 
     import std.string : format;
-	return format!(C)("*%d\r\n%s", bulk_count, buffer.data);
+    return format("*%d\r\n%s", bulk_count, buffer.data);
 }
 
 @trusted auto toBulk(C)(const C[] str) if (isSomeChar!C)
 {
-    import std.string : format;
-    return format!(C)("$%d\r\n%s\r\n", str.length, str);
+    import std.format : format;
+    return format("$%d\r\n%s\r\n", str.length, str);
 }
 
 debug(tinyredis) @trusted C[] escape(C)(C[] str) if (isSomeChar!C)
