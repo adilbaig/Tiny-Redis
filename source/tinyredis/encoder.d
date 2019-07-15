@@ -140,7 +140,7 @@ alias encode = toMultiBulk;
 		bulk_count++;
 	}
 
-    import std.string : format;
+    import std.format : format;
     return format("*%d\r\n%s", bulk_count, buffer.data);
 }
 
