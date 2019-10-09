@@ -47,10 +47,10 @@ alias encode = toMultiBulk;
  */
 @trusted auto toMultiBulk(C, T...)(const C[] command, T args) if (isSomeChar!C)
 {
-    auto buffer = appender!(C[])();
-    auto l = accumulator!(C,T)(buffer, args);
-    auto str = "*" ~ to!(C[])(l + 1) ~ "\r\n" ~ toBulk(command) ~ buffer.data;
-    return str;
+	auto buffer = appender!(C[])();
+	auto l = accumulator!(C,T)(buffer, args);
+	auto str = "*" ~ to!(C[])(l + 1) ~ "\r\n" ~ toBulk(command) ~ buffer.data;
+	return str;
 }
 
 /**
@@ -69,8 +69,8 @@ alias encode = toMultiBulk;
 
 	buffer ~= "*" ~ to!(C[])(commands.length) ~ "\r\n";
 
-    foreach(c; commands) {
-        buffer ~= toBulk(c);
+	foreach(c; commands) {
+		buffer ~= toBulk(c);
 	}
 
 	return buffer.data;
@@ -81,7 +81,7 @@ alias encode = toMultiBulk;
  */
 @trusted auto toMultiBulk(C)(const C[] command) if (isSomeChar!C)
 {
-    alias command str;
+	alias command str;
 
 	size_t
 		start,
@@ -93,41 +93,41 @@ alias encode = toMultiBulk;
 
 	C c;
 
-    for(size_t i = 0; i < str.length; i++) {
-    	c = str[i];
+	for(size_t i = 0; i < str.length; i++) {
+		c = str[i];
 
-    	/**
-    	 * Special support for quoted string so that command line support for
-    	 	proper use of EVAL is available.
-    	*/
-    	if((c == '"' || c == '\'')) {
-    		start = i+1;
+		/**
+		 * Special support for quoted string so that command line support for
+		 	proper use of EVAL is available.
+		*/
+		if((c == '"' || c == '\'')) {
+			start = i+1;
 
 			//Circuit breaker to avoid RangeViolation
-    		while(++i < str.length
-    			&& (str[i] != c || (str[i] == c && str[i-1] == '\\'))
-    			){}
+			while(++i < str.length
+				&& (str[i] != c || (str[i] == c && str[i-1] == '\\'))
+				){}
 
 			goto MULTIBULK_PROCESS;
 		}
 
-    	if(c != ' ') {
+		if(c != ' ') {
 			continue;
 		}
 
-    	// c is a ' ' (space) here
-    	if(i == start) {
+		// c is a ' ' (space) here
+		if(i == start) {
 			start++;
 			end++;
 			continue;
 		}
 
-    	MULTIBULK_PROCESS:
-    	end = i;
+		MULTIBULK_PROCESS:
+		end = i;
 		buffer ~= toBulk(str[start .. end]);
 		start = end + 1;
 		bulk_count++;
-    }
+	}
 
 	//Nothing found? That means the string is just one Bulk
 	if(!buffer.data.length)  {
@@ -140,20 +140,20 @@ alias encode = toMultiBulk;
 		bulk_count++;
 	}
 
-    import std.string : format;
+	import std.string : format;
 	return format("*%d\r\n%s", bulk_count, buffer.data);
 }
 
 @trusted auto toBulk(C)(const C[] str) if (isSomeChar!C)
 {
-    import std.string : format;
+	import std.string : format;
 	return format("$%d\r\n%s\r\n", str.length, str);
 }
 
 debug(tinyredis) @trusted C[] escape(C)(C[] str) if (isSomeChar!C)
 {
-    import std.string : replace;
-    return replace(str,"\r\n","\\r\\n");
+	import std.string : replace;
+	return replace(str,"\r\n","\\r\\n");
 }
 
 private :
@@ -162,7 +162,7 @@ import std.array : Appender;
 
 @trusted uint accumulator(C, T...)(Appender!(C[]) w, T args)
 {
-    uint ctr = 0;
+	uint ctr = 0;
 
 	foreach (i, arg; args) {
 		static if(isSomeString!(typeof(arg))) {
@@ -176,7 +176,7 @@ import std.array : Appender;
 			w ~= toBulk(text(arg));
 			ctr++;
 		}
-    }
+	}
 
 	return ctr;
 }
@@ -184,25 +184,25 @@ import std.array : Appender;
 unittest {
 
 	assert(toBulk("$2") == "$2\r\n$2\r\n");
-    assert(encode("GET *2") == "*2\r\n$3\r\nGET\r\n$2\r\n*2\r\n");
-    assert(encode("TTL myset") == "*2\r\n$3\r\nTTL\r\n$5\r\nmyset\r\n");
-    assert(encode("TTL", "myset") == "*2\r\n$3\r\nTTL\r\n$5\r\nmyset\r\n");
+	assert(encode("GET *2") == "*2\r\n$3\r\nGET\r\n$2\r\n*2\r\n");
+	assert(encode("TTL myset") == "*2\r\n$3\r\nTTL\r\n$5\r\nmyset\r\n");
+	assert(encode("TTL", "myset") == "*2\r\n$3\r\nTTL\r\n$5\r\nmyset\r\n");
 
-    auto lua = "return redis.call('set','foo','bar')";
-    assert(encode("EVAL \"" ~ lua ~ "\" 0") == "*3\r\n$4\r\nEVAL\r\n$"~to!(string)(lua.length)~"\r\n"~lua~"\r\n$1\r\n0\r\n");
+	auto lua = "return redis.call('set','foo','bar')";
+	assert(encode("EVAL \"" ~ lua ~ "\" 0") == "*3\r\n$4\r\nEVAL\r\n$"~to!(string)(lua.length)~"\r\n"~lua~"\r\n$1\r\n0\r\n");
 
-    assert(encode("\"" ~ lua ~ "\" \"" ~ lua ~ "\" ") == "*2\r\n$"~to!(string)(lua.length)~"\r\n"~lua~"\r\n$"~to!(string)(lua.length)~"\r\n"~lua~"\r\n");
-    assert(encode("eval \"" ~ lua ~ "\" " ~ "0") == encode("eval", lua, 0));
+	assert(encode("\"" ~ lua ~ "\" \"" ~ lua ~ "\" ") == "*2\r\n$"~to!(string)(lua.length)~"\r\n"~lua~"\r\n$"~to!(string)(lua.length)~"\r\n"~lua~"\r\n");
+	assert(encode("eval \"" ~ lua ~ "\" " ~ "0") == encode("eval", lua, 0));
 
-    assert(encode("SREM", ["myset", "$3", "$4", "two words"]) == encode("SREM myset $3 $4 'two words'"));
-    assert(encode("SREM", "myset", "$3", "$4", "two words")   == encode("SREM myset $3 $4 'two words'"));
-    assert(encode(["SREM", "myset", "$3", "$4", "two words"]) == encode("SREM myset $3 $4 'two words'"));
+	assert(encode("SREM", ["myset", "$3", "$4", "two words"]) == encode("SREM myset $3 $4 'two words'"));
+	assert(encode("SREM", "myset", "$3", "$4", "two words")   == encode("SREM myset $3 $4 'two words'"));
+	assert(encode(["SREM", "myset", "$3", "$4", "two words"]) == encode("SREM myset $3 $4 'two words'"));
 
-    assert(encode("SADD", "numbers", [1,2,3]) == encode("SADD numbers 1 2 3"));
-    assert(encode("SADD", "numbers", 1,2,3, [4,5]) == encode("SADD numbers 1 2 3 4 5"));
-    assert(encode("TTL", "myset") == encode("TTL myset"));
-    assert(encode("TTL", "myset") == encode("TTL", ["myset"]));
+	assert(encode("SADD", "numbers", [1,2,3]) == encode("SADD numbers 1 2 3"));
+	assert(encode("SADD", "numbers", 1,2,3, [4,5]) == encode("SADD numbers 1 2 3 4 5"));
+	assert(encode("TTL", "myset") == encode("TTL myset"));
+	assert(encode("TTL", "myset") == encode("TTL", ["myset"]));
 
-    assert(encode("ZADD", "mysortedset", 1, "{\"a\": \"b\"}") == "*4\r\n$4\r\nZADD\r\n$11\r\nmysortedset\r\n$1\r\n1\r\n$10\r\n{\"a\": \"b\"}\r\n");
-    assert(encode("ZADD", "mysortedset", "1", "{\"a\": \"b\"}") == "*4\r\n$4\r\nZADD\r\n$11\r\nmysortedset\r\n$1\r\n1\r\n$10\r\n{\"a\": \"b\"}\r\n");
+	assert(encode("ZADD", "mysortedset", 1, "{\"a\": \"b\"}") == "*4\r\n$4\r\nZADD\r\n$11\r\nmysortedset\r\n$1\r\n1\r\n$10\r\n{\"a\": \"b\"}\r\n");
+	assert(encode("ZADD", "mysortedset", "1", "{\"a\": \"b\"}") == "*4\r\n$4\r\nZADD\r\n$11\r\nmysortedset\r\n$1\r\n1\r\n$10\r\n{\"a\": \"b\"}\r\n");
 }
