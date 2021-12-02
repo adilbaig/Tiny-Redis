@@ -111,9 +111,8 @@ alias encode = toMultiBulk;
 			goto MULTIBULK_PROCESS;
 		}
 
-		if(c != ' ') {
+		if(c != ' ')
 			continue;
-		}
 
 		// c is a ' ' (space) here
 		if(i == start) {
@@ -130,7 +129,7 @@ alias encode = toMultiBulk;
 	}
 
 	//Nothing found? That means the string is just one Bulk
-	if(!buffer.data.length)  {
+	if(!buffer.data.length) {
 		buffer ~= toBulk(str);
 		bulk_count++;
 	}
@@ -156,7 +155,7 @@ debug(tinyredis) @trusted C[] escape(C)(C[] str) if (isSomeChar!C)
 	return replace(str,"\r\n","\\r\\n");
 }
 
-private :
+private:
 
 import std.array : Appender;
 
@@ -188,10 +187,10 @@ unittest {
 	assert(encode("TTL myset") == "*2\r\n$3\r\nTTL\r\n$5\r\nmyset\r\n");
 	assert(encode("TTL", "myset") == "*2\r\n$3\r\nTTL\r\n$5\r\nmyset\r\n");
 
-	auto lua = "return redis.call('set','foo','bar')";
-	assert(encode("EVAL \"" ~ lua ~ "\" 0") == "*3\r\n$4\r\nEVAL\r\n$"~to!(string)(lua.length)~"\r\n"~lua~"\r\n$1\r\n0\r\n");
+	enum lua = "return redis.call('set','foo','bar')";
+	assert(encode("EVAL \"" ~ lua ~ "\" 0") == "*3\r\n$4\r\nEVAL\r\n$"~to!string(lua.length)~"\r\n"~lua~"\r\n$1\r\n0\r\n");
 
-	assert(encode("\"" ~ lua ~ "\" \"" ~ lua ~ "\" ") == "*2\r\n$"~to!(string)(lua.length)~"\r\n"~lua~"\r\n$"~to!(string)(lua.length)~"\r\n"~lua~"\r\n");
+	assert(encode("\"" ~ lua ~ "\" \"" ~ lua ~ "\" ") == "*2\r\n$"~to!string(lua.length)~"\r\n"~lua~"\r\n$"~to!string(lua.length)~"\r\n"~lua~"\r\n");
 	assert(encode("eval \"" ~ lua ~ "\" " ~ "0") == encode("eval", lua, 0));
 
 	assert(encode("SREM", ["myset", "$3", "$4", "two words"]) == encode("SREM myset $3 $4 'two words'"));
