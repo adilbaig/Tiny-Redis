@@ -98,9 +98,9 @@ void main()
         Since you already know what type of result to expect, you can 
         tell the send template to return the appropriate value directly
     */
-    int s    = redis.send!int("LASTSAVE");
-    string t = redis.send!string("GET tinyredis");
-    bool b   = redis.send!bool("EXISTS tinyredis");
+    auto s = redis.send!int("LASTSAVE");
+    auto t = redis.send!string("GET tinyredis");
+    auto b = redis.send!bool("EXISTS tinyredis");
     
     //Test Opcast
     if (redis.send("EXISTS", "tinyredis"))

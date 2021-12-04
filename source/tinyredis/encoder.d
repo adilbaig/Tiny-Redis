@@ -33,7 +33,7 @@ alias encode = toMultiBulk;
 		buffer ~= toBulk(c);
 	}
 
-	return buffer.data;
+	return buffer[];
 }
 
 /**
@@ -49,8 +49,7 @@ alias encode = toMultiBulk;
 {
 	auto buffer = appender!(C[])();
 	auto l = accumulator!(C,T)(buffer, args);
-	auto str = "*" ~ to!(C[])(l + 1) ~ "\r\n" ~ toBulk(command) ~ buffer.data;
-	return str;
+	return "*" ~ to!(C[])(l + 1) ~ "\r\n" ~ toBulk(command) ~ buffer[];
 }
 
 /**
@@ -65,7 +64,7 @@ alias encode = toMultiBulk;
 @trusted auto toMultiBulk(C)(const C[][] commands) if (isSomeChar!C)
 {
 	auto buffer = appender!(C[])();
-	buffer.reserve(commands.length * 100);
+	buffer.reserve(commands.length * 50);
 
 	buffer ~= "*" ~ to!(C[])(commands.length) ~ "\r\n";
 
@@ -73,7 +72,7 @@ alias encode = toMultiBulk;
 		buffer ~= toBulk(c);
 	}
 
-	return buffer.data;
+	return buffer[];
 }
 
 /**
@@ -129,7 +128,7 @@ alias encode = toMultiBulk;
 	}
 
 	//Nothing found? That means the string is just one Bulk
-	if(!buffer.data.length) {
+	if(!buffer[].length) {
 		buffer ~= toBulk(str);
 		bulk_count++;
 	}
@@ -140,7 +139,7 @@ alias encode = toMultiBulk;
 	}
 
 	import std.string : format;
-	return format("*%d\r\n%s", bulk_count, buffer.data);
+	return format("*%d\r\n%s", bulk_count, buffer[]);
 }
 
 @trusted auto toBulk(C)(const C[] str) if (isSomeChar!C)
@@ -161,7 +160,7 @@ import std.array : Appender;
 
 @trusted uint accumulator(C, T...)(Appender!(C[]) w, T args)
 {
-	uint ctr = 0;
+	uint ctr;
 
 	foreach (i, arg; args) {
 		static if(isSomeString!(typeof(arg))) {

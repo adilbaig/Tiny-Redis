@@ -33,7 +33,7 @@ public:
 		debug(tinyredis) { writeln("Request : '", escape(encoded_cmd) ~ "'"); }
 
 		auto sent = conn.send(encoded_cmd);
-		if (sent != (cast(byte[])encoded_cmd).length)
+		if (sent != encoded_cmd.length)
 			throw new ConnectionException("Error while sending request");
 	}
 
@@ -52,7 +52,6 @@ public:
 
 		byte[] buffer;
 		Response[] responses;
-
 
 		Response*[] MultiBulks; //Stack of pointers to multibulks
 		Response[]* stackPtr = &responses; // This is the stack where new elements are pushed
@@ -115,6 +114,8 @@ class ConnectionException : Exception {
 
 private void receive(TcpSocket conn, ref byte[] buffer)
 {
+	import core.stdc.errno;
+
 	byte[1024 * 16] buff;
 	size_t len = conn.receive(buff);
 
@@ -122,23 +123,16 @@ private void receive(TcpSocket conn, ref byte[] buffer)
 	{
 		if(len == 0)
 			throw new ConnectionException("Server closed the connection!");
-		else if(len == TcpSocket.ERROR)
+		if(len == TcpSocket.ERROR)
 			throw new ConnectionException("A socket error occurred!");
 	}
-	else
+	else if (len == -1)
 	{
-		if (len == -1)
-		{
-			import core.stdc.errno;
+		if (errno != EWOULDBLOCK)
+			throw new ConnectionException("A socket error occurred! errno: %s".format(errno));
 
-			if (errno == EWOULDBLOCK)
-			{
-				len = 0;
-				errno = 0;
-			}
-			else
-				throw new ConnectionException(format("A socket error occurred! errno: %s", errno));
-		}
+		len = 0;
+		errno = 0;
 	}
 
 	buffer ~= buff[0 .. len];

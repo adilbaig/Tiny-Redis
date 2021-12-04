@@ -15,8 +15,7 @@ class Redis
 {
 	import std.socket : TcpSocket, InternetAddress;
 
-	private:
-		TcpSocket conn;
+	private TcpSocket conn;
 
 	public:
 
@@ -54,7 +53,7 @@ class Redis
 		// For async calls, just flush the queue
 		// This automatically gives us PubSub
 
-		debug(tinyredis) { writeln(escape(toMultiBulk(key, args)));}
+		debug(tinyredis) writeln(escape(toMultiBulk(key, args)));
 
 		conn.send(toMultiBulk(key, args));
 		Response[] r = receiveResponses(conn, 1);
@@ -63,7 +62,7 @@ class Redis
 
 	R send(R = Response)(string cmd)
 	{
-		debug(tinyredis) { writeln(escape(toMultiBulk(cmd)));}
+		debug(tinyredis) writeln(escape(toMultiBulk(cmd)));
 
 		conn.send(toMultiBulk(cmd));
 		Response[] r = receiveResponses(conn, 1);
@@ -75,7 +74,7 @@ class Redis
 	 */
 	R sendRaw(R = Response)(string cmd)
 	{
-		debug(tinyredis) { writeln(escape(cmd));}
+		debug(tinyredis) writeln(escape(cmd));
 
 		conn.send(cmd);
 		Response[] r = receiveResponses(conn, 1);
@@ -97,9 +96,8 @@ class Redis
 		import std.array : appender;
 
 		auto app = appender!(C[])();
-		foreach(c; commands) {
+		foreach(c; commands)
 			app ~= encode(c);
-		}
 
 		conn.send(app.data);
 		return receiveResponses(conn, commands.length);

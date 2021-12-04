@@ -223,14 +223,13 @@ struct Response
 			case ResponseType.Integer:
 				C[] ret = uninitializedArray!(C[])(intval.sizeof);
 				C* bytes = cast(C*)&intval;
-				for(C i = 0; i < intval.sizeof; i++) {
+				for(int i = 0; i < intval.sizeof; i++)
 					ret[i] = bytes[i];
-				}
 
 				return ret;
 
 			case ResponseType.Bulk:
-				return cast(C[]) value;
+				return cast(C[])value;
 
 			default:
 				return [];
@@ -281,19 +280,19 @@ struct Response
 				if(intval <= T.max)
 					return cast(T)intval;
 				else
-					throw new ConvOverflowException("Cannot convert " ~ to!string(intval) ~ " to " ~ to!string(typeid(T)));
+					throw new ConvOverflowException("Cannot convert " ~ intval.to!string ~ " to " ~ typeid(T).to!string);
 
 			case ResponseType.Bulk:
 				try{
 					return to!T(value);
 				}catch(ConvOverflowException e)
 				{
-					e.msg = "Cannot convert " ~ value ~ " to " ~ to!string(typeid(T));
+					e.msg = "Cannot convert " ~ value ~ " to " ~ typeid(T).to!string;
 					throw e;
 				}
 
 			default:
-				throw new RedisCastException("Cannot cast " ~ type ~ " to " ~ to!string(typeid(T)));
+				throw new RedisCastException("Cannot cast " ~ type ~ " to " ~ typeid(T).to!string);
 		}
 	}
 
@@ -307,7 +306,7 @@ struct Response
 		switch(type)
 		{
 			case ResponseType.Integer:
-				return to!string(intval);
+				return intval.to!string;
 
 			case ResponseType.Error:
 			case ResponseType.Status:
@@ -327,7 +326,7 @@ struct Response
 	 */
 	@property @trusted string toDiagnosticString()
 	{
-		import std.conv : text;
+		import std.array : appender;
 
 		final switch(type)
 		{
@@ -338,7 +337,7 @@ struct Response
 				return "(Err) " ~ value;
 
 			case ResponseType.Integer:
-				return "(Integer) " ~ to!(string)(intval);
+				return "(Integer) " ~ intval.to!string;
 
 			case ResponseType.Status:
 				return "(Status) " ~ value;
@@ -347,12 +346,13 @@ struct Response
 				return value;
 
 			case ResponseType.MultiBulk:
-				string[] t;
+
+				auto t = appender!string();
 
 				foreach(v; values)
 					t ~= v.toDiagnosticString();
 
-				return text(t);
+				return t[];
 
 			case ResponseType.Invalid:
 				return "(Invalid)";
