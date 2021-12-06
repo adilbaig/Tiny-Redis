@@ -17,8 +17,7 @@ import tinyredis.response;
 {
 	import std.conv : to;
 
-	Response response;
-	response.type = ResponseType.Invalid;
+	Response response = { type: ResponseType.Invalid };
 
 	if(mb.length < 4)
 		return response;
@@ -38,20 +37,20 @@ import tinyredis.response;
 
 	switch(type)
 	{
-		 case '+' :
+		 case '+':
 			response.type = ResponseType.Status;
 			response.value = cast(string)bytes;
 			break;
 
-		case '-' :
+		case '-':
 			throw new RedisResponseException(cast(string)bytes);
 
-		case ':' :
+		case ':':
 			response.type = ResponseType.Integer;
 			response.intval = to!long(cast(char[])bytes);
 			break;
 
-		case '$' :
+		case '$':
 			int l = to!int(cast(char[])bytes);
 			if(l == -1)
 			{
@@ -75,7 +74,7 @@ import tinyredis.response;
 			response.type = ResponseType.Bulk;
 			break;
 
-		case '*' :
+		case '*':
 			int l = to!int(cast(char[])bytes);
 			if(l == -1)
 			{
@@ -88,7 +87,7 @@ import tinyredis.response;
 
 			break;
 
-		default :
+		default:
 			return response;
 	}
 

@@ -1,5 +1,5 @@
 {
-    "name": "kaleidic-tinyredis",
+    "name": "tinyredis",
     "description": "Redis driver for D.",
     "authors": ["Adil Baig"],
     "homepage": "http://adilbaig.github.com/Tiny-Redis/",

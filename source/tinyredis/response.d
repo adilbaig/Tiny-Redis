@@ -280,19 +280,19 @@ struct Response
 				if(intval <= T.max)
 					return cast(T)intval;
 				else
-					throw new ConvOverflowException("Cannot convert " ~ intval.to!string ~ " to " ~ typeid(T).to!string);
+					throw new ConvOverflowException("Cannot convert " ~ intval.to!string ~ " to " ~ T.stringof);
 
 			case ResponseType.Bulk:
 				try{
 					return to!T(value);
 				}catch(ConvOverflowException e)
 				{
-					e.msg = "Cannot convert " ~ value ~ " to " ~ typeid(T).to!string;
+					e.msg = "Cannot convert " ~ value ~ " to " ~ T.stringof;
 					throw e;
 				}
 
 			default:
-				throw new RedisCastException("Cannot cast " ~ type ~ " to " ~ typeid(T).to!string);
+				throw new RedisCastException("Cannot cast " ~ type ~ " to " ~ T.stringof);
 		}
 	}
 

@@ -4,8 +4,6 @@ module tinyredis.subscriber;
  * Authors: Ali Çehreli, acehreli@yahoo.com
  */
 
-private:
-
 import tinyredis.response : Response;
 import tinyredis.encoder : toMultiBulk;
 import tinyredis.connection : receiveResponses;
