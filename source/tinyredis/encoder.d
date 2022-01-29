@@ -4,11 +4,10 @@ module tinyredis.encoder;
  * Authors: Adil Baig, adil.baig@aidezigns.com
  */
 
-import std.array : appender;
-import std.traits : isSomeChar, isSomeString, isArray;
+import std.array : Appender, appender;
 import std.conv : to, text;
-
-public:
+import std.string : format;
+import std.traits : isSomeChar, isSomeString, isArray;
 
 alias encode = toMultiBulk;
 
@@ -138,25 +137,21 @@ alias encode = toMultiBulk;
 		bulk_count++;
 	}
 
-	import std.string : format;
-	return format("*%d\r\n%s", bulk_count, buffer[]);
+	return "*%d\r\n%s".format(bulk_count, buffer[]);
 }
 
 @trusted auto toBulk(C)(const C[] str) if (isSomeChar!C)
 {
-	import std.string : format;
-	return format("$%d\r\n%s\r\n", str.length, str);
+	return "$%d\r\n%s\r\n".format(str.length, str);
 }
 
 debug(tinyredis) @trusted C[] escape(C)(C[] str) if (isSomeChar!C)
 {
 	import std.string : replace;
-	return replace(str,"\r\n","\\r\\n");
+	return str.replace("\r\n", "\\r\\n");
 }
 
 private:
-
-import std.array : Appender;
 
 @trusted uint accumulator(C, T...)(Appender!(C[]) w, T args)
 {

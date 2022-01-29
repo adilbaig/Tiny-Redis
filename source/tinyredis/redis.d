@@ -4,9 +4,10 @@ module tinyredis.redis;
  * Authors: Adil Baig, adil.baig@aidezigns.com
  */
 
-import tinyredis.connection;
-import tinyredis.encoder;
-import tinyredis.response;
+import
+	tinyredis.connection,
+	tinyredis.encoder,
+	tinyredis.response;
 import tinyredis.decoder : RedisResponseException;
 
 debug(tinyredis) import std.stdio;
@@ -17,14 +18,16 @@ class Redis
 
 	private TcpSocket conn;
 
-	public:
-
 	/**
 	 * Create a new connection to the Redis server
 	 */
 	this(string host = "127.0.0.1", ushort port = 6379)
 	{
 		conn = new TcpSocket(new InternetAddress(host, port));
+	}
+
+	void close() nothrow @nogc {
+		conn.close();
 	}
 
 	/**
@@ -56,15 +59,6 @@ class Redis
 		debug(tinyredis) writeln(escape(toMultiBulk(key, args)));
 
 		conn.send(toMultiBulk(key, args));
-		Response[] r = receiveResponses(conn, 1);
-		return cast(R)r[0];
-	}
-
-	R send(R = Response)(string cmd)
-	{
-		debug(tinyredis) writeln(escape(toMultiBulk(cmd)));
-
-		conn.send(toMultiBulk(cmd));
 		Response[] r = receiveResponses(conn, 1);
 		return cast(R)r[0];
 	}
@@ -121,14 +115,12 @@ class Redis
 		cmd ~= "EXEC";
 		auto rez = pipeline(cmd);
 
-		if(all) {
+		if(all)
 			return rez;
-		}
 
 		auto resp = rez[$ - 1];
-		if(resp.isError()) {
+		if(resp.isError)
 			throw new RedisResponseException(resp.value);
-		}
 
 		return resp.values;
 	}
@@ -162,9 +154,7 @@ class Redis
 		Response[] r = receiveResponses(conn, 1);
 		return r[0];
 	}
-
 }
-
 
 unittest
 {
@@ -195,7 +185,7 @@ unittest
 	assert(bytes[0] == 11);
 	/* END Test casting byte[] */
 
-	assert(redis.send!(string)("GET name") == "adil baig");
+	assert(redis.send!string("GET name") == "adil baig");
 
 	response = redis.send("GET nonexistentkey");
 	assert(response.type == ResponseType.Nil);

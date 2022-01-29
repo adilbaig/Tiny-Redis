@@ -6,7 +6,7 @@ module tinyredis.response;
 
 import std.conv : to;
 
-enum CRLF = "\r\n";
+package enum CRLF = "\r\n";
 
 enum ResponseType : byte
 {
@@ -34,84 +34,64 @@ struct Response
 
 	private int curr;
 
-	union{
+	union {
 		string value;
 		long intval;
 		Response[] values;
 	}
 
-	@property bool isString() const
-	{
-		return type == ResponseType.Bulk;
-	}
+	@property nothrow @nogc {
+		bool isString() const { return type == ResponseType.Bulk; }
 
-	@property bool isInt() const
-	{
-		return type == ResponseType.Integer;
-	}
+		bool isInt() const { return type == ResponseType.Integer; }
 
-	@property bool isArray() const
-	{
-		return type == ResponseType.MultiBulk;
-	}
+		bool isArray() const { return type == ResponseType.MultiBulk; }
 
-	@property bool isError() const
-	{
-		return type == ResponseType.Error;
-	}
+		bool isError() const { return type == ResponseType.Error; }
 
-	@property bool isNil() const
-	{
-		return type == ResponseType.Nil;
-	}
+		bool isNil() const { return type == ResponseType.Nil; }
 
-	@property bool isStatus() const
-	{
-		return type == ResponseType.Status;
-	}
+		bool isStatus() const { return type == ResponseType.Status; }
 
-	@property bool isValid() const
-	{
-		return type != ResponseType.Invalid;
-	}
+		bool isValid() const { return type != ResponseType.Invalid; }
 
-	/*
-	 * Response is a BidirectionalRange
-	 */
-	@property bool empty()
-	{
-		if(!isArray()) {
-			return true;
+		/*
+		 * Response is a BidirectionalRange
+		 */
+		bool empty()
+		{
+			if(!isArray())
+				return true;
+
+			return curr == values.length;
 		}
 
-		return curr == values.length;
-	}
+		auto front()
+		{
+			return values[curr];
+		}
 
-	@property auto front()
-	{
-		return values[curr];
-	}
+		void popFront()
+		{
+			curr++;
+		}
 
-	@property void popFront()
-	{
-		curr++;
-	}
+		auto back()
+		{
+			return values[values.length - 1];
+		}
 
-	@property auto back()
-	{
-		return values[values.length - 1];
-	}
+		void popBack()
+		{
+			curr--;
+		}
 
-	@property void popBack()
-	{
-		curr--;
-	}
-
-	// Response is a ForwardRange
-	@property auto save()
-	{
-		// Returning a copy of this struct object
-		return this;
+		// Response is a ForwardRange
+		auto save()
+		{
+			// Returning a copy of this struct object
+			return this;
+		}
 	}
 
 	/**
@@ -119,13 +99,11 @@ struct Response
 	 */
 	int opApply(int delegate(size_t, Response) dg)
 	{
-		if(!isArray()) {
+		if(!isArray())
 			return 1;
-		}
 
-		foreach(k, v; values) {
+		foreach(k, v; values)
 			dg(k, v);
-		}
 
 		return 0;
 	}
@@ -135,13 +113,11 @@ struct Response
 	 */
 	int opApplyReverse(int delegate(size_t, Response) dg)
 	{
-		if(!isArray()) {
+		if(!isArray())
 			return 1;
-		}
 
-		foreach_reverse(k, v; values) {
+		foreach_reverse(k, v; values)
 			dg(k, v);
-		}
 
 		return 0;
 	}
@@ -151,13 +127,11 @@ struct Response
 	 */
 	int opApply(int delegate(Response) dg)
 	{
-		if(!isArray()) {
+		if(!isArray())
 			return 1;
-		}
 
-		foreach(v; values) {
+		foreach(v; values)
 			dg(v);
-		}
 
 		return 0;
 	}
@@ -167,13 +141,11 @@ struct Response
 	 */
 	int opApplyReverse(int delegate(Response) dg)
 	{
-		if(!isArray()) {
+		if(!isArray())
 			return 1;
-		}
 
-		foreach_reverse(v; values) {
+		foreach_reverse(v; values)
 			dg(v);
-		}
 
 		return 0;
 	}
@@ -183,19 +155,18 @@ struct Response
 	 */
 	T opCast(T)()
 	if(is(T == bool)
-			|| is(T == byte)
-			|| is(T == short)
-			|| is(T == int)
-			|| is(T == long)
-			|| is(T == string)
-			)
+	|| is(T == byte)
+	|| is(T == short)
+	|| is(T == int)
+	|| is(T == long)
+	|| is(T == string))
 	{
 		static if(is(T == bool))
-			return toBool();
+			return toBool;
 		else static if(is(T == byte) || is(T == short) || is(T == int) || is(T == long))
-			return toInt!T();
+			return toInt!T;
 		else static if(is(T == string))
-			return toString();
+			return toString;
 	}
 
 	/**
@@ -203,8 +174,10 @@ struct Response
 	 */
 	C[] opCast(C : C[])() if(is(C == byte) || is(C == ubyte))
 	{
-		return toBytes!(C)();
+		return toBytes!(C);
 	}
+
+@property @trusted:
 
 	/**
 	 * Attempts to convert a response to an array of bytes
@@ -214,7 +187,7 @@ struct Response
 	 *
 	 * Returns an empty array in all other cases;
 	 */
-	@property @trusted C[] toBytes(C)() if(is(C == byte) || is(C == ubyte))
+	C[] toBytes(C)() if(is(C == byte) || is(C == ubyte))
 	{
 		import std.array;
 
@@ -241,24 +214,15 @@ struct Response
 	 *
 	 * Returns false on failure.
 	 */
-	@property @trusted bool toBool()
+	bool toBool()
 	{
-		switch(type)
+		switch(type) with(ResponseType)
 		{
-			case ResponseType.Integer:
-				return intval > 0;
-
-			case ResponseType.Status:
-				return value == "OK";
-
-			case ResponseType.Bulk:
-				return value.length > 0;
-
-			case ResponseType.MultiBulk:
-				return values.length > 0;
-
-			default:
-				return false;
+			case Integer:	return intval > 0;
+			case Status:	return value == "OK";
+			case Bulk:		return value.length != 0;
+			case MultiBulk: return values.length != 0;
+			default:		return false;
 		}
 	}
 
@@ -269,7 +233,7 @@ struct Response
 	 *
 	 * Throws : ConvOverflowException, RedisCastException
 	 */
-	@property @trusted T toInt(T = int)()
+	T toInt(T = int)()
 	if(is(T == byte) || is(T == short) || is(T == int) || is(T == long))
 	{
 		import std.conv : ConvOverflowException;
@@ -279,13 +243,12 @@ struct Response
 			case ResponseType.Integer:
 				if(intval <= T.max)
 					return cast(T)intval;
-				else
-					throw new ConvOverflowException("Cannot convert " ~ intval.to!string ~ " to " ~ T.stringof);
+				throw new ConvOverflowException("Cannot convert " ~ intval.to!string ~ " to " ~ T.stringof);
 
 			case ResponseType.Bulk:
-				try{
+				try
 					return to!T(value);
-				}catch(ConvOverflowException e)
+				catch(ConvOverflowException e)
 				{
 					e.msg = "Cannot convert " ~ value ~ " to " ~ T.stringof;
 					throw e;
@@ -299,21 +262,21 @@ struct Response
 	/**
 	 * Returns the value of this Response as a string
 	 */
-	@property @trusted string toString()
+	string toString()
 	{
 		import std.conv : text;
 
-		switch(type)
+		switch(type) with(ResponseType)
 		{
-			case ResponseType.Integer:
+			case Integer:
 				return intval.to!string;
 
-			case ResponseType.Error:
-			case ResponseType.Status:
-			case ResponseType.Bulk:
+			case Error:
+			case Status:
+			case Bulk:
 				return value;
 
-			case ResponseType.MultiBulk:
+			case MultiBulk:
 				return text(values);
 
 			default:
@@ -324,38 +287,38 @@ struct Response
 	/**
 	 * Returns the value of this Response as a string, along with type information
 	 */
-	@property @trusted string toDiagnosticString()
+	string toDiagnosticString()
 	{
 		import std.array : appender;
+		auto app = appender!string;
+		toDiagnosticString(app);
 
-		final switch(type)
+		return app[];
+	}
+
+	void toDiagnosticString(R)(ref R appender)
+	{
+		final switch(type) with(ResponseType)
 		{
-			case ResponseType.Nil:
-				return "(Nil)";
-
-			case ResponseType.Error:
-				return "(Err) " ~ value;
-
-			case ResponseType.Integer:
-				return "(Integer) " ~ intval.to!string;
-
-			case ResponseType.Status:
-				return "(Status) " ~ value;
-
-			case ResponseType.Bulk:
-				return value;
-
-			case ResponseType.MultiBulk:
-
-				auto t = appender!string();
-
-				foreach(v; values)
-					t ~= v.toDiagnosticString();
-
-				return t[];
-
-			case ResponseType.Invalid:
-				return "(Invalid)";
+		case Invalid:	appender.put("(Invalid)");	break;
+		case Nil:		appender.put("(Nil)");		break;
+		case Error:
+			appender.put("(Err) ");
+			goto case Bulk;
+		case Integer:
+			appender.put("(Integer) ");
+			appender.put(intval.to!string);
+			break;
+		case Status:
+			appender.put("(Status) ");
+			goto case;
+		case Bulk:
+			appender.put(value);
+			break;
+		case MultiBulk:
+			foreach(v; values)
+				v.toDiagnosticString(appender);
+			break;
 		}
 	}
 }

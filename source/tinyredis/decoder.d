@@ -17,7 +17,7 @@ import tinyredis.response;
 {
 	import std.conv : to;
 
-	Response response = { type: ResponseType.Invalid };
+	Response response = { ResponseType.Invalid };
 
 	if(mb.length < 4)
 		return response;
@@ -102,7 +102,6 @@ class RedisResponseException : Exception {
 	this(string msg) { super(msg); }
 }
 
-
 private bool getData(in byte[] mb, ref byte[] data) @safe pure
 {
 	foreach(p, byte c; mb)
@@ -113,7 +112,6 @@ private bool getData(in byte[] mb, ref byte[] data) @safe pure
 
 	return false;
 }
-
 
 unittest
 {

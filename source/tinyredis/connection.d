@@ -16,7 +16,6 @@ debug(tinyredis) {
 	import tinyredis.encoder : escape;
 }
 
-
 /**
  * Sends a pre-encoded string
  *
@@ -58,7 +57,7 @@ Response[] receiveResponses(TcpSocket conn, size_t minResponses = 0)
 	{
 		receive(conn, buffer);
 
-		while(buffer.length > 0)
+		while(buffer.length)
 		{
 			auto r = parseResponse(buffer);
 			if(r.type == ResponseType.Invalid) // This occurs when the buffer is incomplete. Pull more
@@ -98,7 +97,6 @@ Response[] receiveResponses(TcpSocket conn, size_t minResponses = 0)
 
 			break;
 		}
-
 	}
 
 	return responses;
@@ -114,7 +112,7 @@ private void receive(TcpSocket conn, ref byte[] buffer)
 {
 	import core.stdc.errno;
 
-	byte[1024 * 16] buff;
+	byte[16 << 10] buff;
 	size_t len = conn.receive(buff);
 
 	if (conn.blocking)

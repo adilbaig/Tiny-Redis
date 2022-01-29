@@ -13,19 +13,18 @@ import tinyredis : Redis, Response;
 */
 class Set
 {
-	private:
+	private {
 		Redis conn;
 		string name;
+	}
 
-	public:
-	
 	this(Redis conn, string name)
 	{
 		this.conn = conn;
 		this.name = name;
 	}
 	
-	Response smembers()
+	auto smembers()
 	{
 		return conn.send("SMEMBERS", name);
 	}
@@ -37,26 +36,28 @@ class Set
 	alias count = scard;
 	
 	
-	bool srem(in char[] value)
+	int srem(const(char[])[] values...)
 	{
-		return conn.send!bool("SREM", name, value);
+		return conn.send!int("SREM", name, values);
 	}
 	
-	void del()
+	int del()
 	{
-		conn.send("DEL", name);
+		return conn.send!int("DEL", name);
 	}
 	
 	// OutputRange
-	void put(in char[] value)
+	int put(in char[] value)
 	{
-		conn.send("SADD", name, value);
+		return conn.send!int("SADD", name, value);
 	}
 	
-	void put(const(char[])[] values)
+	int put(const(char[])[] values)
 	{
+		int count;
 		foreach(value; values)
-			conn.send("SADD", name, value);
+			count += put(value);
+		return count;
 	}
 	
 	void opAssign(const(char[]) value)
@@ -71,33 +72,29 @@ class Set
 		put(values);
 	}
 
-	void opOpAssign(string op)(in char[] value)
-	{
-		static if (op == "~")
-			put(value);
-		else static if (op == "-")
-			srem(value);
-		else 
-			static assert(0, "Operator "~op~" not implemented");
+	void opOpAssign(string op)(in char[] value) if (op == "~") {
+		put(value);
+	}
+
+	void opOpAssign(string op)(in char[] value) if (op == "-") {
+		srem(value);
 	}
 	
-	void opOpAssign(string op)(const(char[])[] values)
-	{
-		static if (op == "~")
-			foreach(value; values)
-				put(value);
-		else static if (op == "-")
-			foreach(value; values)
-				srem(value);
-		else 
-			static assert(0, "Operator "~op~" not implemented");
+	void opOpAssign(string op)(const(char[])[] values) if (op == "~") {
+		foreach(value; values)
+			put(value);
+	}
+
+	void opOpAssign(string op)(const(char[])[] values) if (op == "-") {
+		foreach(value; values)
+			srem(value);
 	}
 }
 
 unittest {
-	
 	import std.range : isOutputRange;
-	assert(isOutputRange!(Set, string));
+
+	static assert(isOutputRange!(Set, string));
 	
 	// Start a redis server on 127.0.0.1:6379
 	auto conn = new Redis("localhost", 6379);
