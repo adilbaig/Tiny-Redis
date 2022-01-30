@@ -13,13 +13,11 @@ import std.array : empty, front, popFront;
 import std.algorithm : find, any, min;
 import std.conv : to;
 
-public:
-
 // Regular subscription callback
-alias Callback = void delegate(string channel, string message);
+alias Callback = void delegate(string channel, string message),
 
 // Pattern subscription callback
-alias PCallback = void delegate(string pattern, string channel, string message);
+	PCallback = void delegate(string pattern, string channel, string message);
 
 /**
  * Whether a response is of a particular message type
@@ -75,14 +73,12 @@ private:
 				// Enqueue older responses for later processing
 				queue ~= responses[0 .. $ - found.length];
 
-				if (!found.empty)
-				{
-					resp = found.front;
-					responses = found[1 .. $];
-					++matched;
-				}
-				else
+				if (found.empty)
 					break;
+				
+				resp = found.front;
+				responses = found[1 .. $];
+				++matched;
 			}
 		}
 
@@ -101,7 +97,7 @@ private:
 	/**
 	 * Process a single message
 	 */
-	private void processMessage(Response resp)
+	void processMessage(Response resp)
 	{
 		auto elements = resp.values;
 
@@ -233,8 +229,7 @@ public:
 	 */
 	size_t unsubscribe()
 	{
-		enum cmd = "UNSUBSCRIBE";
-		send(cmd);
+		send("UNSUBSCRIBE");
 
 		Response resp = queueUnlessType!"unsubscribe"(callbacks.length);
 		callbacks = null;
@@ -265,8 +260,7 @@ public:
 	 */
 	size_t punsubscribe()
 	{
-		enum cmd = "PUNSUBSCRIBE";
-		send(cmd);
+		send("PUNSUBSCRIBE");
 
 		Response resp = queueUnlessType!"punsubscribe"(pCallbacks.length);
 		pCallbacks = null;
@@ -279,12 +273,9 @@ public:
 	 */
 	Response quit()
 	{
-		enum cmd = "QUIT";
-		send(cmd);
+		send("QUIT");
 
-		Response resp = queueUnless(r => r.value == "OK");
-
-		return resp;
+		return queueUnless(r => r.value == "OK");
 	}
 
 	/**
@@ -295,9 +286,7 @@ public:
 		auto cmd = "PING " ~ argument;
 
 		send(cmd);
-		Response resp = queueUnless(r => r.isType!"pong");
-
-		return resp;
+		return queueUnless(r => r.isType!"pong");
 	}
 
 	/**
@@ -308,9 +297,8 @@ public:
 		queue ~= receiveResponses(conn, 0);
 
 		foreach (arr; queue) {
-			foreach (resp; arr) {
+			foreach (resp; arr)
 				processMessage(resp);
-			}
 		}
 
 		queue.length = 0;

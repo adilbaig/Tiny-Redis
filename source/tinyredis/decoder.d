@@ -13,173 +13,182 @@ import tinyredis.response;
  * The parser works to identify a minimum complete Response. If successful, it removes that chunk from "mb" and returns a Response struct.
  * On failure it returns a `ResponseType.Invalid` Response and leaves "mb" untouched.
  */
-@trusted Response parseResponse(ref byte[] mb)
+@trusted Response parseResponse(ref char[] mb)
 {
-	import std.conv : to;
-
-	Response response = { ResponseType.Invalid };
+	Response resp = { ResponseType.Invalid };
 
 	if(mb.length < 4)
-		return response;
+		return resp;
 
-	char type = mb[0];
-
-	byte[] bytes;
-	if(!getData(mb[1 .. $], bytes)) //This could be an int value (:), a bulk byte length ($), a status message (+) or an error value (-)
-		return response;
-
-	size_t tpos = 1 + bytes.length;
-
-	if(tpos + 2 > mb.length)
-		return response;
-	else
-		tpos += 2; //for "\r\n"
-
-	switch(type)
+	char c = mb[0];
+	mb = mb[1..$];
+	switch(c)
 	{
-		 case '+':
-			response.type = ResponseType.Status;
-			response.value = cast(string)bytes;
+		case '+':
+			if (!mb.tryParse(resp.value))
+				return resp;
+
+			resp.type = ResponseType.Status;
 			break;
 
 		case '-':
-			throw new RedisResponseException(cast(string)bytes);
+			if (!mb.tryParse(resp.value))
+				return resp;
+
+			resp.type = ResponseType.Error;
+			break;
 
 		case ':':
-			response.type = ResponseType.Integer;
-			response.intval = to!long(cast(char[])bytes);
+			if (!mb.tryParse(resp.intval))
+				return resp;
+
+			resp.type = ResponseType.Integer;
 			break;
 
 		case '$':
-			int l = to!int(cast(char[])bytes);
+			int l = void;
+			if (!mb.tryParse(l))
+				return resp;
+
 			if(l == -1)
 			{
-				response.type = ResponseType.Nil;
+				resp.type = ResponseType.Nil;
 				break;
 			}
 
-			if(tpos + l >= mb.length) //We don't have enough data. Let's return an invalid response.
-				return response;
-			else
-			{
-				response.value = cast(string)mb[tpos .. tpos + l];
-				tpos += l;
+			if(l + 2 > mb.length) //We don't have enough data. Let's return an invalid resp.
+				return resp;
 
-				if(tpos + 2 > mb.length)
-					return response;
-				else
-					tpos += 2;
-			}
-
-			response.type = ResponseType.Bulk;
+			resp.value = cast(string)mb[0..l];
+			resp.type = ResponseType.Bulk;
+			mb = mb[l+2..$];
 			break;
 
 		case '*':
-			int l = to!int(cast(char[])bytes);
+			int l = void;
+			if (!mb.tryParse(l))
+				return resp;
+
 			if(l == -1)
 			{
-				response.type = ResponseType.Nil;
+				resp.type = ResponseType.Nil;
 				break;
 			}
 
-			response.type = ResponseType.MultiBulk;
-			response.count = l;
-
+			resp.type = ResponseType.MultiBulk;
+			resp.count = l;
 			break;
 
 		default:
-			return response;
+			break;
 	}
 
-	mb = mb[tpos .. $];
-	return response;
+	return resp;
 }
 
+import std.traits;
 
-/* ----------- EXCEPTIONS ------------- */
+bool tryParse(T)(ref char[] data, out T x) if(isIntegral!T)
+in (data.length) {
+	T f = 1;
+	size_t i;
+	char c = data[0];
+	if (c == '-') {
+		f = -1;
+		i = 1;
+	}
+	for(; i < data.length; ++i) {
+		c = data[i];
+		if (c < '0' || c > '9')
+			break;
+		x = x * 10 + (c ^ '0');
+		if (x < 0)
+			return false;
+	}
+	x *= f;
+	++i;
+	if(c != '\r' || i >= data.length || data[i] != '\n')
+		return false;
 
-class RedisResponseException : Exception {
-	this(string msg) { super(msg); }
+	data = data[i+1..$];
+	return true;
 }
 
-private bool getData(in byte[] mb, ref byte[] data) @safe pure
-{
-	foreach(p, byte c; mb)
-		if(c == 13) //'\r'
-			return true;
-		else
-			data ~= c;
+bool tryParse(T)(ref char[] data, out T x) if(isSomeString!T) {
+	import std.string;
 
-	return false;
+	auto i = indexOf(data, '\r');
+	if (i < 0 || i + 1 >= data.length || data[i + 1] != '\n')
+		return false;
+
+	x = cast(T)data[0..i];
+	data = data[i+2..$];
+	return true;
 }
 
 unittest
 {
 	//Test Nil bulk
-	auto stream = cast(byte[])"$-1\r\n";
-	auto response = parseResponse(stream);
-	assert(response.toString == "");
-	assert(response.toBool == false);
-	assert(cast(bool)response == false);
+	auto stream = cast(char[])"$-1\r\n";
+	auto resp = parseResponse(stream);
+	assert(resp.toString == "");
+	assert(!resp.toBool);
+	assert(!cast(bool)resp);
 	try{
-		cast(int)response;
-		assert(false);
-	}catch(RedisCastException e)
-	{
-		//assert(true);
+		cast(int)resp;
+		assert(0);
 	}
+	catch(RedisCastException) {}
 
 	//Test Nil multibulk
-	stream = cast(byte[])"*-1\r\n";
-	response = parseResponse(stream);
-	assert(response.toString == "");
-	assert(response.toBool == false);
-	assert(cast(bool)response == false);
+	stream = cast(char[])"*-1\r\n";
+	resp = parseResponse(stream);
+	assert(resp.toString == "");
+	assert(!resp.toBool);
+	assert(!cast(bool)resp);
 	try{
-		cast(int)response;
-		assert(false);
-	}catch(RedisCastException e)
-	{
-		//assert(true);
+		cast(int)resp;
+		assert(0);
 	}
+	catch(RedisCastException) {}
 
 	//Empty Bulk
-	stream = cast(byte[])"$0\r\n\r\n";
-	response = parseResponse(stream);
-	assert(response.toString == "");
-	assert(response.toBool == false);
-	assert(cast(bool)response == false);
+	stream = cast(char[])"$0\r\n\r\n";
+	resp = parseResponse(stream);
+	assert(resp.toString == "");
+	assert(!resp.toBool);
+	assert(!resp);
 
-	stream = cast(byte[])"*4\r\n$3\r\nGET\r\n$1\r\n*\r\n:123\r\n+A Status Message\r\n";
+	stream = cast(char[])"*4\r\n$3\r\nGET\r\n$1\r\n*\r\n:123\r\n+A Status Message\r\n";
 
-	response = parseResponse(stream);
-	assert(response.type == ResponseType.MultiBulk);
-	assert(response.count == 4);
-	assert(response.values.length == 0);
+	resp = parseResponse(stream);
+	assert(resp.type == ResponseType.MultiBulk);
+	assert(resp.count == 4);
+	assert(resp.values.length == 0);
 
-	response = parseResponse(stream);
-	assert(response.type == ResponseType.Bulk);
-	assert(response.value == "GET");
-	assert(cast(string)response == "GET");
+	resp = parseResponse(stream);
+	assert(resp.type == ResponseType.Bulk);
+	assert(resp.value == "GET");
+	assert(cast(string)resp == "GET");
 
-	response = parseResponse(stream);
-	assert(response.type == ResponseType.Bulk);
-	assert(response.value == "*");
-	assert(cast(bool)response == true);
+	resp = parseResponse(stream);
+	assert(resp.type == ResponseType.Bulk);
+	assert(resp.value == "*");
+	assert(resp);
 
-	response = parseResponse(stream);
-	assert(response.type == ResponseType.Integer);
-	assert(response.intval == 123);
-	assert(cast(string)response == "123");
-	assert(cast(int)response == 123);
+	resp = parseResponse(stream);
+	assert(resp.type == ResponseType.Integer);
+	assert(resp.intval == 123);
+	assert(cast(string)resp == "123");
+	assert(cast(int)resp == 123);
 
-	response = parseResponse(stream);
-	assert(response.type == ResponseType.Status);
-	assert(response.value == "A Status Message");
-	assert(cast(string)response == "A Status Message");
-	try{
-		cast(int)response;
-	}catch(RedisCastException e)
+	resp = parseResponse(stream);
+	assert(resp.type == ResponseType.Status);
+	assert(resp.value == "A Status Message");
+	assert(cast(string)resp == "A Status Message");
+	try
+		cast(int)resp;
+	catch(RedisCastException)
 	{
 		//Exception caught
 	}
@@ -190,19 +199,16 @@ unittest
 
 	import std.conv : ConvOverflowException;
 	//Long overflow checking
-	stream = cast(byte[])":9223372036854775808\r\n";
-	try{
-		parseResponse(stream);
-		assert(false, "Tried to convert long.max+1 to long");
-	}
-	catch(ConvOverflowException e){}
+	stream = cast(char[])":9223372036854775808\r\n";
+	resp = parseResponse(stream);
+	assert(resp.type == ResponseType.Invalid, "Tried to convert long.max+1 to long");
 
 	Response r = {type : ResponseType.Bulk, value : "9223372036854775807"};
 	try{
 		r.toInt(); //Default int
-		assert(false, "Tried to convert long.max to int");
+		assert(0, "Tried to convert long.max to int");
 	}
-	catch(ConvOverflowException e)
+	catch(ConvOverflowException)
 	{
 		//Ok, exception thrown as expected
 	}
@@ -210,58 +216,55 @@ unittest
 	r.value = "127";
 	assert(r.toInt!byte() == 127);
 	assert(r.toInt!short() == 127);
-	assert(r.toInt!int() == 127);
+	assert(r.toInt() == 127);
 	assert(r.toInt!long() == 127);
 
-	stream = cast(byte[])"*0\r\n";
-	response = parseResponse(stream);
-	assert(response.count == 0);
-	assert(response.values.length == 0);
-	assert(response.values == []);
-	assert(response.toString == "[]");
-	assert(response.toBool == false);
-	assert(cast(bool)response == false);
-	try{
-		cast(int)response;
-	}catch(RedisCastException e)
-	{
-		//assert(true);
-	}
+	stream = cast(char[])"*0\r\n";
+	resp = parseResponse(stream);
+	assert(resp.count == 0);
+	assert(resp.values.length == 0);
+	assert(resp.values == []);
+	assert(resp.toString == "[]");
+	assert(!resp.toBool);
+	assert(!cast(bool)resp);
+	try
+		cast(int)resp;
+	catch(RedisCastException) {}
 
 	//Testing opApply
-	stream = cast(byte[])"*0\r\n";
-	response = parseResponse(stream);
-	foreach(k, v; response)
-		assert(false, "opApply is broken");
-	foreach(v; response)
-		assert(false, "opApply is broken");
+	stream = cast(char[])"*0\r\n";
+	resp = parseResponse(stream);
+	foreach(k, v; resp)
+		assert(0, "opApply is broken");
+	foreach(v; resp)
+		assert(0, "opApply is broken");
 
-	stream = cast(byte[])"$2\r\n$2\r\n";
-	response = parseResponse(stream);
-	foreach(k, v; response)
-		assert(false, "opApply is broken");
-	foreach(v; response)
-		assert(false, "opApply is broken");
+	stream = cast(char[])"$2\r\n$2\r\n";
+	resp = parseResponse(stream);
+	foreach(k, v; resp)
+		assert(0, "opApply is broken");
+	foreach(v; resp)
+		assert(0, "opApply is broken");
 
-	stream = cast(byte[])":1000\r\n";
-	response = parseResponse(stream);
-	foreach(k, v; response)
-		assert(false, "opApply is broken");
-	foreach(v; response)
-		assert(false, "opApply is broken");
+	stream = cast(char[])":1000\r\n";
+	resp = parseResponse(stream);
+	foreach(k, v; resp)
+		assert(0, "opApply is broken");
+	foreach(v; resp)
+		assert(0, "opApply is broken");
 
 	//Testing opApplyReverse
-	stream = cast(byte[])"*0\r\n";
-	response = parseResponse(stream);
-	foreach_reverse(k, v; response)
-		assert(false, "opApplyReverse is broken");
-	foreach_reverse(v; response)
-		assert(false, "opApplyReverse is broken");
+	stream = cast(char[])"*0\r\n";
+	resp = parseResponse(stream);
+	foreach_reverse(k, v; resp)
+		assert(0, "opApplyReverse is broken");
+	foreach_reverse(v; resp)
+		assert(0, "opApplyReverse is broken");
 
 	import std.range : isInputRange, isForwardRange, isBidirectionalRange;
 
 	//Testing ranges for Response
-	assert(isInputRange!Response);
-	assert(isForwardRange!Response);
-	assert(isBidirectionalRange!Response);
+	static assert(isInputRange!Response);
+	static assert(isForwardRange!Response);
+	static assert(isBidirectionalRange!Response);
 }

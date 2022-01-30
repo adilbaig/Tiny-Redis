@@ -4,8 +4,6 @@ module tinyredis.response;
  * Authors: Adil Baig, adil.baig@aidezigns.com
  */
 
-import std.conv : to;
-
 package enum CRLF = "\r\n";
 
 enum ResponseType : byte
@@ -18,7 +16,6 @@ enum ResponseType : byte
 	MultiBulk,
 	Nil
 }
-
 /**
  * The Response struct represents returned data from Redis.
  *
@@ -29,16 +26,24 @@ enum ResponseType : byte
  */
 struct Response
 {
+	import std.conv : to;
+
 	ResponseType type;
-	int count; //Used for multibulk only. -1 is a valid multibulk. Indicates nil
-
-	private int curr;
-
 	union {
-		string value;
-		long intval;
-		Response[] values;
+		struct {
+			Response[] values;
+			int count; //Used for multibulk only. -1 is a valid multibulk. Indicates nil
+		}
+		struct {
+			size_t length;
+			union {
+				string value;
+				long intval;
+			}
+		}
 	}
+
+	alias values this;
 
 	@property nothrow @nogc {
 		bool isString() const { return type == ResponseType.Bulk; }
@@ -55,99 +60,12 @@ struct Response
 
 		bool isValid() const { return type != ResponseType.Invalid; }
 
-		/*
-		 * Response is a BidirectionalRange
-		 */
-		bool empty()
-		{
-			if(!isArray())
-				return true;
-
-			return curr == values.length;
-		}
-
-		auto front()
-		{
-			return values[curr];
-		}
-
-		void popFront()
-		{
-			curr++;
-		}
-
-		auto back()
-		{
-			return values[values.length - 1];
-		}
-
-		void popBack()
-		{
-			curr--;
-		}
-
 		// Response is a ForwardRange
 		auto save()
 		{
 			// Returning a copy of this struct object
 			return this;
 		}
-	}
-
-	/**
-	 * Support foreach(k, v; response)
-	 */
-	int opApply(int delegate(size_t, Response) dg)
-	{
-		if(!isArray())
-			return 1;
-
-		foreach(k, v; values)
-			dg(k, v);
-
-		return 0;
-	}
-
-	/**
-	 * Support foreach_reverse(k, v; response)
-	 */
-	int opApplyReverse(int delegate(size_t, Response) dg)
-	{
-		if(!isArray())
-			return 1;
-
-		foreach_reverse(k, v; values)
-			dg(k, v);
-
-		return 0;
-	}
-
-	/**
-	 * Support foreach(v; response)
-	 */
-	int opApply(int delegate(Response) dg)
-	{
-		if(!isArray())
-			return 1;
-
-		foreach(v; values)
-			dg(v);
-
-		return 0;
-	}
-
-	/**
-	 * Support foreach_reverse(v; response)
-	 */
-	int opApplyReverse(int delegate(Response) dg)
-	{
-		if(!isArray())
-			return 1;
-
-		foreach_reverse(v; values)
-			dg(v);
-
-		return 0;
 	}
 
 	/**
@@ -195,10 +113,7 @@ struct Response
 		{
 			case ResponseType.Integer:
 				C[] ret = uninitializedArray!(C[])(intval.sizeof);
-				C* bytes = cast(C*)&intval;
-				for(int i = 0; i < intval.sizeof; i++)
-					ret[i] = bytes[i];
-
+				*cast(long*)ret.ptr = intval;
 				return ret;
 
 			case ResponseType.Bulk:

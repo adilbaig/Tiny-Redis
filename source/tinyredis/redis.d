@@ -8,9 +8,14 @@ import
 	tinyredis.connection,
 	tinyredis.encoder,
 	tinyredis.response;
-import tinyredis.decoder : RedisResponseException;
 
 debug(tinyredis) import std.stdio;
+
+/* ----------- EXCEPTIONS ------------- */
+
+class RedisException : Exception {
+	this(string msg) { super(msg); }
+}
 
 class Redis
 {
@@ -120,7 +125,7 @@ class Redis
 
 		auto resp = rez[$ - 1];
 		if(resp.isError)
-			throw new RedisResponseException(resp.value);
+			throw new RedisException(resp.value);
 
 		return resp.values;
 	}

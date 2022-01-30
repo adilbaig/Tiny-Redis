@@ -29,7 +29,7 @@ class Set
 		return conn.send("SMEMBERS", name);
 	}
 	
-	int scard()
+	@property int scard()
 	{
 		return conn.send!int("SCARD", name);
 	}
@@ -72,20 +72,20 @@ class Set
 		put(values);
 	}
 
-	void opOpAssign(string op)(in char[] value) if (op == "~") {
+	void opOpAssign(string op : "~")(in char[] value) {
 		put(value);
 	}
 
-	void opOpAssign(string op)(in char[] value) if (op == "-") {
+	void opOpAssign(string op : "-")(in char[] value) {
 		srem(value);
 	}
 	
-	void opOpAssign(string op)(const(char[])[] values) if (op == "~") {
+	void opOpAssign(string op : "~")(const(char[])[] values) {
 		foreach(value; values)
 			put(value);
 	}
 
-	void opOpAssign(string op)(const(char[])[] values) if (op == "-") {
+	void opOpAssign(string op : "-")(const(char[])[] values) {
 		foreach(value; values)
 			srem(value);
 	}
@@ -103,21 +103,21 @@ unittest {
 	set = ["banana", "apple", "orange"]; // data can be assigned using opAssign
 	set.put("grapes"); //the put() function appends a value
 	 
-	assert(set.scard() == 4); // runs the SCARD command, presents a proper count of the set on the server
-	assert(set.count() == 4); // count is an alias for SCARD command
+	assert(set.scard == 4); // runs the SCARD command, presents a proper count of the set on the server
+	assert(set.count == 4); // count is an alias for SCARD command
 	
 	//opAssign resets the data
 	set = ["guava", "pear"];
-	assert(set.scard() == 2);
+	assert(set.scard == 2);
 	
 	set ~= "banana"; // implements opOpAssign so ~= appends data
 	set ~= "apple";
 	set ~= ["orange", "mango"];
 	set ~= "apple"; //DUPLICATE!
-	assert(set.count() == 6);
+	assert(set.count == 6);
 	
 	set -= "mango"; //Not mango season!
-	assert(set.count() == 5);
+	assert(set.count == 5);
 	
 	import std.algorithm : canFind;
 	foreach(fruit; set.smembers())

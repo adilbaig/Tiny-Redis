@@ -98,7 +98,7 @@ alias encode = toMultiBulk;
 		 * Special support for quoted string so that command line support for
 		 	proper use of EVAL is available.
 		*/
-		if((c == '"' || c == '\'')) {
+		if(c == '"' || c == '\'') {
 			start = i+1;
 
 			//Circuit breaker to avoid RangeViolation
@@ -157,14 +157,13 @@ private:
 {
 	uint ctr;
 
-	foreach (i, arg; args) {
-		static if(isSomeString!(typeof(arg))) {
+	static foreach (i, arg; args) {
+		static if(isSomeString!(T[i])) {
 			w ~= toBulk(arg);
 			ctr++;
-		} else static if(isArray!(typeof(arg))) {
-			foreach(a; arg) {
+		} else static if(isArray!(T[i])) {
+			foreach(a; arg)
 				ctr += accumulator(w, a);
-			}
 		} else {
 			w ~= toBulk(text(arg));
 			ctr++;
