@@ -28,9 +28,8 @@ alias encode = toMultiBulk;
 
 	buffer ~= "*" ~ to!(C[])(args.length + 1) ~ "\r\n" ~ toBulk(command);
 
-	foreach (c; args) {
+	foreach (c; args)
 		buffer ~= toBulk(c);
-	}
 
 	return buffer[];
 }
@@ -67,9 +66,8 @@ alias encode = toMultiBulk;
 
 	buffer ~= "*" ~ to!(C[])(commands.length) ~ "\r\n";
 
-	foreach(c; commands) {
+	foreach(c; commands)
 		buffer ~= toBulk(c);
-	}
 
 	return buffer[];
 }

@@ -7,10 +7,7 @@ module tinyredis.connection;
 import std.socket : TcpSocket;
 version(Windows) import core.sys.windows.winsock2: EWOULDBLOCK;
 
-import std.string : format;
-import
-	tinyredis.decoder,
-	tinyredis.response;
+import tinyredis.response;
 
 debug(tinyredis) {
 	import std.stdio : writeln;
@@ -59,7 +56,7 @@ Response[] receiveResponses(TcpSocket conn, size_t minResponses = 0)
 
 		while(buffer.length)
 		{
-			auto r = parseResponse(buffer);
+			auto r = Response.parse(buffer);
 			if(r.type == ResponseType.Invalid) // This occurs when the buffer is incomplete. Pull more
 				break;
 
@@ -106,6 +103,7 @@ class ConnectionException : Exception {
 private void receive(TcpSocket conn, ref char[] buffer)
 {
 	import core.stdc.errno;
+	import std.string : format;
 
 	char[16 << 10] buff = void;
 	size_t len = conn.receive(buff);

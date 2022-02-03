@@ -4,6 +4,7 @@ import tinyredis.redis,
        std.stdio,
        std.getopt,
        std.datetime,
+       std.datetime.stopwatch,
        std.array,
        std.math
     ;
@@ -17,8 +18,8 @@ import tinyredis.redis,
 
 void usage(string program)
 {
-	writeln("Usage : ", program, " [-h <host>] [-p <port>] [-n <requests>]");
-	writeln("
+	writeln("Usage : ", program, " [-h <host>] [-p <port>] [-n <requests>]
+
   -h | --host <hostname>      Server hostname (default 127.0.0.1)
   -p | --port <port>          Server port (default 6379)
   -n | --requests <requests>  Number of requests (default 100,000)
@@ -44,8 +45,8 @@ void timeCommand(Redis redis, string command, ref StopWatch sw, const uint reqs,
 
     sw.stop();
 
-    writefln("%d requests completed in %.3f seconds", reqs, sw.peek().msecs()/1000.0);
-    writefln("%d requests per second", cast(uint)std.math.round(reqs/(sw.peek().msecs()/1000.0)));
+    writefln("%d requests completed in %.3f seconds", reqs, sw.peek().total!"msecs"/1000.0);
+    writefln("%d requests per second", cast(uint)std.math.round(reqs/(sw.peek().total!"msecs"/1000.0)));
     writeln("");
 }
 
@@ -67,8 +68,8 @@ void timePubSub(Redis redis, Subscriber subscriber, string command, ref StopWatc
 
     sw.stop();
 
-    writefln("%d messages processed in %.3f seconds", reqs, sw.peek().msecs()/1000.0);
-    writefln("%d messages per second", cast(uint)std.math.round(reqs/(sw.peek().msecs()/1000.0)));
+    writefln("%d messages processed in %.3f seconds", reqs, sw.peek().total!"msecs"/1000.0);
+    writefln("%d messages per second", cast(uint)std.math.round(reqs/(sw.peek().total!"msecs"/1000.0)));
     writeln("");
 }
 

@@ -22,6 +22,7 @@ class Redis
 	import std.socket : TcpSocket, InternetAddress;
 
 	private TcpSocket conn;
+	alias conn this;
 
 	/**
 	 * Create a new connection to the Redis server
@@ -29,10 +30,6 @@ class Redis
 	this(string host = "127.0.0.1", ushort port = 6379)
 	{
 		conn = new TcpSocket(new InternetAddress(host, port));
-	}
-
-	void close() nothrow @nogc {
-		conn.close();
 	}
 
 	/**
@@ -57,14 +54,14 @@ class Redis
 	{
 		//Implement a write queue here.
 		// All encoded responses are put into a write queue and flushed
-		// For a send request, flush the queue and listen to a response
+		// For a send request, flush the queue and listen to a resp
 		// For async calls, just flush the queue
 		// This automatically gives us PubSub
 
 		debug(tinyredis) writeln(escape(toMultiBulk(key, args)));
 
 		conn.send(toMultiBulk(key, args));
-		Response[] r = receiveResponses(conn, 1);
+		Response[] r = conn.receiveResponses(1);
 		return cast(R)r[0];
 	}
 
@@ -76,7 +73,7 @@ class Redis
 		debug(tinyredis) writeln(escape(cmd));
 
 		conn.send(cmd);
-		Response[] r = receiveResponses(conn, 1);
+		Response[] r = conn.receiveResponses(1);
 		return cast(R)r[0];
 	}
 
@@ -99,7 +96,7 @@ class Redis
 			app ~= encode(c);
 
 		conn.send(app.data);
-		return receiveResponses(conn, commands.length);
+		return conn.receiveResponses(commands.length);
 	}
 
 	/**
@@ -149,52 +146,50 @@ class Redis
 	Response eval(K = string, A = string)(string lua_script, K[] keys = [], A[] args = [])
 	{
 		conn.send(toMultiBulk("EVAL", lua_script, keys.length, keys, args));
-		Response[] r = receiveResponses(conn, 1);
-		return r[0];
+		return conn.receiveResponses(1)[0];
 	}
 
 	Response evalSha(K = string, A = string)(string sha1, K[] keys = [], A[] args = [])
 	{
 		conn.send(toMultiBulk("EVALSHA", sha1, keys.length, keys, args));
-		Response[] r = receiveResponses(conn, 1);
-		return r[0];
+		return conn.receiveResponses(1)[0];
 	}
 }
 
 unittest
 {
 	auto redis = new Redis();
-	auto response = redis.send("LASTSAVE");
-	assert(response.type == ResponseType.Integer);
+	auto resp = redis.send("LASTSAVE");
+	assert(resp.type == ResponseType.Integer);
 
 	assert(redis.send!bool("SET", "name", "adil baig"));
 
 	redis.send("SET emptystring ''");
-	response = redis.send("GET emptystring");
-	assert(response.value == "");
+	resp = redis.send("GET emptystring");
+	assert(resp.value == "");
 
-	response = redis.send("GET name");
-	assert(response.type == ResponseType.Bulk);
-	assert(response.value == "adil baig");
+	resp = redis.send("GET name");
+	assert(resp.type == ResponseType.Bulk);
+	assert(resp.value == "adil baig");
 
 	/* START Test casting byte[] */
-	assert(cast(byte[])response == "adil baig"); //Test casting to byte[]
-	assert(cast(byte[])response == [97, 100, 105, 108, 32, 98, 97, 105, 103]);
+	assert(cast(byte[])resp == "adil baig"); //Test casting to byte[]
+	assert(cast(byte[])resp == [97, 100, 105, 108, 32, 98, 97, 105, 103]);
 
 	redis.send("SET mykey 10");
-	response = redis.send("INCR mykey");
-	assert(response.type == ResponseType.Integer);
-	assert(response.intval == 11);
-	auto bytes = cast(ubyte[])response;
-	assert(bytes.length == response.intval.sizeof);
+	resp = redis.send("INCR mykey");
+	assert(resp.type == ResponseType.Integer);
+	assert(resp.intval == 11);
+	auto bytes = cast(ubyte[])resp;
+	assert(bytes.length == resp.intval.sizeof);
 	assert(bytes[0] == 11);
 	/* END Test casting byte[] */
 
 	assert(redis.send!string("GET name") == "adil baig");
 
-	response = redis.send("GET nonexistentkey");
-	assert(response.type == ResponseType.Nil);
-	assert(cast(ubyte[])response == []);
+	resp = redis.send("GET nonexistentkey");
+	assert(resp.type == ResponseType.Nil);
+	assert(cast(ubyte[])resp == []);
 
 	redis.send("DEL myset");
 	redis.send("SADD", "myset", 1.2);
@@ -248,25 +243,25 @@ unittest
 	assert(responses[1].intval == 2);
 	assert(responses[2].intval == 3);
 
-	response = redis.send("EVAL", "return {KEYS[1],KEYS[2],ARGV[1],ARGV[2]}", 2, "key1", "key2", "first", "second");
-	assert(response.values.length == 4);
-	assert(response.values[0].value == "key1");
-	assert(response.values[1].value == "key2");
-	assert(response.values[2].value == "first");
-	assert(response.values[3].value == "second");
+	resp = redis.send("EVAL", "return {KEYS[1],KEYS[2],ARGV[1],ARGV[2]}", 2, "key1", "key2", "first", "second");
+	assert(resp.values.length == 4);
+	assert(resp.values[0].value == "key1");
+	assert(resp.values[1].value == "key2");
+	assert(resp.values[2].value == "first");
+	assert(resp.values[3].value == "second");
 
 	//Same as above, but simpler
-	response = redis.eval("return {KEYS[1],KEYS[2],ARGV[1],ARGV[2]}", ["key1", "key2"], ["first", "second"]);
-	assert(response.values.length == 4);
-	assert(response.values[0].value == "key1");
-	assert(response.values[1].value == "key2");
-	assert(response.values[2].value == "first");
-	assert(response.values[3].value == "second");
+	resp = redis.eval("return {KEYS[1],KEYS[2],ARGV[1],ARGV[2]}", ["key1", "key2"], ["first", "second"]);
+	assert(resp.values.length == 4);
+	assert(resp.values[0].value == "key1");
+	assert(resp.values[1].value == "key2");
+	assert(resp.values[2].value == "first");
+	assert(resp.values[3].value == "second");
 
-	response = redis.eval("return redis.call('set','lua','LUA_AGAIN')");
+	resp = redis.eval("return redis.call('set','lua','LUA_AGAIN')");
 	assert(cast(string)redis.send("GET lua") == "LUA_AGAIN");
 
 	// A BLPOP times out to a Nil multibulk
-	response = redis.send("BLPOP nonExistentList 1");
-	assert(response.isNil());
+	resp = redis.send("BLPOP nonExistentList 1");
+	assert(resp.isNil());
 }
