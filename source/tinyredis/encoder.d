@@ -6,7 +6,7 @@ module tinyredis.encoder;
 
 import std.array : Appender, appender;
 import std.conv : to, text;
-import std.string : format;
+import std.format : format;
 import std.traits : isSomeChar, isSomeString, isArray;
 
 alias encode = toMultiBulk;

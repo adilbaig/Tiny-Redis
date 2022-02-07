@@ -21,8 +21,11 @@ class Redis
 {
 	import std.socket : TcpSocket, InternetAddress;
 
-	private TcpSocket conn;
-	alias conn this;
+	protected TcpSocket conn;
+
+	void close() nothrow @nogc {
+		conn.close();
+	}
 
 	/**
 	 * Create a new connection to the Redis server
@@ -95,7 +98,7 @@ class Redis
 		foreach(c; commands)
 			app ~= encode(c);
 
-		conn.send(app.data);
+		conn.send(app[]);
 		return conn.receiveResponses(commands.length);
 	}
 

@@ -73,7 +73,7 @@ struct Response
 	 * The parser works to identify a minimum complete Response. If successful, it removes that chunk from "mb" and returns a Response struct.
 	 * On failure it returns a `ResponseType.Invalid` Response and leaves "mb" untouched.
 	 */
-	static Response parse(ref char[] mb) @trusted
+	static Response parse(ref char[] mb) nothrow @nogc @trusted
 	{
 		Response resp;
 		if(mb.length < 4)
