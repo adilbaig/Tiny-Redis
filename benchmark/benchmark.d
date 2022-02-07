@@ -9,6 +9,8 @@ import tinyredis.redis,
        std.math
     ;
 
+import std.datetime.stopwatch: StopWatch;
+
 /**
  This benchmarking program is inspired by redis-benchmark.
  Although the purpose here is to test the TinyRedis driver.
@@ -44,7 +46,6 @@ void timeCommand(Redis redis, string command, ref StopWatch sw, const uint reqs,
         redis.sendRaw(e);
 
     sw.stop();
-
     writefln("%d requests completed in %.3f seconds", reqs, sw.peek().total!"msecs"/1000.0);
     writefln("%d requests per second", cast(uint)std.math.round(reqs/(sw.peek().total!"msecs"/1000.0)));
     writeln("");
