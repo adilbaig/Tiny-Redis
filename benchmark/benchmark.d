@@ -4,6 +4,7 @@ import tinyredis.redis,
        std.stdio,
        std.getopt,
        std.datetime,
+       std.datetime.stopwatch,
        std.array,
        std.math
     ;
@@ -11,16 +12,16 @@ import tinyredis.redis,
 import std.datetime.stopwatch: StopWatch;
 
 /**
- This benchmarking program is inspired by redis-benchmark. 
+ This benchmarking program is inspired by redis-benchmark.
  Although the purpose here is to test the TinyRedis driver.
- 
+
  Authors: Adil Baig, adil.baig@aidezigns.com
 */
 
 void usage(string program)
 {
-	writeln("Usage : ", program, " [-h <host>] [-p <port>] [-n <requests>]");
-	writeln("
+	writeln("Usage : ", program, " [-h <host>] [-p <port>] [-n <requests>]
+
   -h | --host <hostname>      Server hostname (default 127.0.0.1)
   -p | --port <port>          Server port (default 6379)
   -n | --requests <requests>  Number of requests (default 100,000)
@@ -35,17 +36,16 @@ void timeCommand(Redis redis, string command, ref StopWatch sw, const uint reqs,
 {
     sw.reset();
     sw.start();
-    
+
     auto e = encode(command);
     if(pipeline > 1) {
     	e = std.array.replicate(e, pipeline);
     }
-    
+
     for(uint i = 0; i < reqs/pipeline; i++)
         redis.sendRaw(e);
-    
+
     sw.stop();
-    
     writefln("%d requests completed in %.3f seconds", reqs, sw.peek().total!"msecs"/1000.0);
     writefln("%d requests per second", cast(uint)std.math.round(reqs/(sw.peek().total!"msecs"/1000.0)));
     writeln("");
@@ -79,12 +79,12 @@ void timePubSub(Redis redis, Subscriber subscriber, string command, ref StopWatc
  */
 int main(string[] args)
 {
-	string host = "127.0.0.1"; 
+	string host = "127.0.0.1";
 	ushort port = 6379;
 	uint reqs = 100_000;
 	bool help = false;
 	uint pipeline = 1;
-	
+
 	getopt(
 	    args,
 	    "host|h",  &host,
@@ -93,22 +93,22 @@ int main(string[] args)
 	    "pipeline|P",  &pipeline,
 	    "help",  &help
 	    );
-    
+
     if(help || pipeline < 1) {
 		usage(args[0]);
 		return 1;
 	}
 
     auto redis = new Redis(host, port);
-    
+
     //Lies, great lies, and benchmarks.
     StopWatch sw;
-    
+
     redis.send("SET trbck:get 12");
-    
+
     writeln("====== GET ======");
     timeCommand(redis, "GET trbck:get", sw, reqs, pipeline);
-    
+
     writeln("====== SET ======");
     timeCommand(redis, "SET trbck:get 12", sw, reqs, pipeline);
 

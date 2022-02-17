@@ -4,7 +4,7 @@
     "authors": ["Adil Baig"],
     "homepage": "http://adilbaig.github.com/Tiny-Redis/",
     "license": "ISC",
-    "targetPath": "bin/",	
+    "targetPath": "bin/",
     "configurations": [
         {
             "name": "library",
