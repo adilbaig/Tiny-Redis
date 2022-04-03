@@ -73,11 +73,13 @@ struct Response
 	 * The parser works to identify a minimum complete Response. If successful, it removes that chunk from "mb" and returns a Response struct.
 	 * On failure it returns a `ResponseType.Invalid` Response and leaves "mb" untouched.
 	 */
-	static Response parse(ref char[] mb) nothrow @nogc @trusted
+	static Response parse(ref char[] mbCaller) nothrow @nogc @trusted
 	{
 		Response resp;
+		char[] mb = mbCaller;
 		if(mb.length < 4)
 			return resp;
+		void commit() { mbCaller = mb; }
 
 		char c = mb[0];
 		mb = mb[1..$];
@@ -88,6 +90,7 @@ struct Response
 					return resp;
 
 				resp.type = ResponseType.Status;
+				commit;
 				break;
 
 			case '-':
@@ -95,6 +98,7 @@ struct Response
 					return resp;
 
 				resp.type = ResponseType.Error;
+				commit;
 				break;
 
 			case ':':
@@ -102,6 +106,7 @@ struct Response
 					return resp;
 
 				resp.type = ResponseType.Integer;
+				commit;
 				break;
 
 			case '$':
@@ -112,6 +117,7 @@ struct Response
 				if(l == -1)
 				{
 					resp.type = ResponseType.Nil;
+					commit;
 					break;
 				}
 
@@ -121,6 +127,7 @@ struct Response
 				resp.value = cast(string)mb[0..l];
 				resp.type = ResponseType.Bulk;
 				mb = mb[l+2..$];
+				commit;
 				break;
 
 			case '*':
@@ -131,11 +138,13 @@ struct Response
 				if(l == -1)
 				{
 					resp.type = ResponseType.Nil;
+					commit;
 					break;
 				}
 
 				resp.type = ResponseType.MultiBulk;
 				resp.count = l;
+				commit;
 				break;
 
 			default:
@@ -304,6 +313,20 @@ unittest
 	static assert(isInputRange!Response);
 	static assert(isForwardRange!Response);
 	static assert(isBidirectionalRange!Response);
+}
+
+unittest
+{
+    char[] test = "Hello World".dup;
+    assert(Response.parse(test).type == ResponseType.Invalid);
+    assert(test == "Hello World");
+}
+
+unittest
+{
+    char[] test = "$10 abc".dup;
+    assert(Response.parse(test).type == ResponseType.Invalid);
+    assert(test == "$10 abc");
 }
 
 /* ----------- EXCEPTIONS ------------- */
