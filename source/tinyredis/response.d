@@ -1,8 +1,9 @@
-module tinyredis.response;
-
 /**
+ * Contain functions and type to read responses sent from Redis
+ *
  * Authors: Adil Baig, adil.baig@aidezigns.com
  */
+module tinyredis.response;
 
 import std.exception : basicExceptionCtors;
 

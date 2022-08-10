@@ -1,8 +1,9 @@
-module tinyredis.redis;
-
 /**
+ * Expose the `Redis` class, the main user-facing API to interact with Redis
+ *
  * Authors: Adil Baig, adil.baig@aidezigns.com
  */
+module tinyredis.redis;
 
 import std.exception : basicExceptionCtors;
 import
@@ -106,7 +107,11 @@ class Redis
 	/**
 	 * Execute commands in a MULTI/EXEC block.
 	 *
-	 * @param all - (Default: false) - By default, only the results of a transaction are returned. If set to "true", the results of each queuing step is also returned.
+     * Params:
+     *   commands = List of commands to send
+	 *   all =      If `true`, the results of each queuing step is returned.
+     *              Otherwise, only the result of the transaction is returned.
+     *              Default to `false`.
 	 *
 	 * Examples:
 	 *

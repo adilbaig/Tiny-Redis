@@ -1,8 +1,9 @@
-module tinyredis.connection;
-
 /**
+ * Contain functions and type related to connections and their lifetime.
+ *
  * Authors: Adil Baig, adil.baig@aidezigns.com
  */
+module tinyredis.connection;
 
 import std.exception : basicExceptionCtors;
 import std.socket : TcpSocket;
