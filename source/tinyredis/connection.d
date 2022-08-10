@@ -4,6 +4,7 @@ module tinyredis.connection;
  * Authors: Adil Baig, adil.baig@aidezigns.com
  */
 
+import std.exception : basicExceptionCtors;
 import std.socket : TcpSocket;
 version(Windows) import core.sys.windows.winsock2: EWOULDBLOCK;
 
@@ -97,7 +98,7 @@ Response[] receiveResponses(TcpSocket conn, size_t minResponses = 0)
 /* -------- EXCEPTIONS ------------- */
 
 class ConnectionException : Exception {
-	this(string msg) { super(msg); }
+	mixin basicExceptionCtors;
 }
 
 private void receive(TcpSocket conn, ref char[] buffer)

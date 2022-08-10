@@ -4,6 +4,7 @@ module tinyredis.redis;
  * Authors: Adil Baig, adil.baig@aidezigns.com
  */
 
+import std.exception : basicExceptionCtors;
 import
 	tinyredis.connection,
 	tinyredis.encoder,
@@ -14,7 +15,7 @@ debug(tinyredis) import std.stdio;
 /* ----------- EXCEPTIONS ------------- */
 
 class RedisException : Exception {
-	this(string msg) { super(msg); }
+	mixin basicExceptionCtors;
 }
 
 class Redis
