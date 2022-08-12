@@ -1,8 +1,9 @@
-module tinyredis.encoder;
-
 /**
+ * Utilities to encode D types to Redis-compatible strings
+ *
  * Authors: Adil Baig, adil.baig@aidezigns.com
  */
+module tinyredis.encoder;
 
 import std.array : Appender, appender;
 import std.conv : to, text;

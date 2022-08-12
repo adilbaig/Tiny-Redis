@@ -1,3 +1,6 @@
+/**
+ * Convenience package to import all of tinyredis.
+ */
 module tinyredis;
 
 public import

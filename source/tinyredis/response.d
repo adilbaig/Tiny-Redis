@@ -1,8 +1,11 @@
-module tinyredis.response;
-
 /**
+ * Contain functions and type to read responses sent from Redis
+ *
  * Authors: Adil Baig, adil.baig@aidezigns.com
  */
+module tinyredis.response;
+
+import std.exception : basicExceptionCtors;
 
 package enum CRLF = "\r\n";
 
@@ -332,7 +335,7 @@ unittest
 /* ----------- EXCEPTIONS ------------- */
 
 class RedisCastException : Exception {
-	this(string msg) { super(msg); }
+	mixin basicExceptionCtors;
 }
 
 import std.traits;

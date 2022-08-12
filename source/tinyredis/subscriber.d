@@ -1,8 +1,10 @@
-module tinyredis.subscriber;
-
 /**
+ * Utilities for Redis Pub/Sub model
+ *
  * Authors: Ali Çehreli, acehreli@yahoo.com
+ * See_Also: https://redis.io/docs/manual/pubsub/
  */
+module tinyredis.subscriber;
 
 import tinyredis.response : Response;
 import tinyredis.encoder : toMultiBulk;
@@ -50,9 +52,12 @@ private:
 	 *
 	 * This function is the workhorse behind all member functions of this type.
 	 *
-	 * @param pred - The predicate function that determines whether a response is an expected one
-	 * @param expected - The number of responses expected to match the predicate
-	 * @return - The last response that matched the predicate
+     * Params:
+	 *   pred = The predicate function that determines whether a response is an expected one
+	 *   expected = The number of responses expected to match the predicate
+     *
+	 * Returns:
+     *   The last response that matched the predicate
 	 */
 	Response queueUnless(bool delegate(Response) pred, size_t expected = 1)
 	{
@@ -75,7 +80,7 @@ private:
 
 				if (found.empty)
 					break;
-				
+
 				resp = found.front;
 				responses = found[1 .. $];
 				++matched;
