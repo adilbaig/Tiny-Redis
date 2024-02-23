@@ -96,6 +96,34 @@ class Redis
 	}
 
 	/**
+	 * Send an AUTH v6 (ACL) message.
+	 * The library guarantees that the parameters are not logged and
+	 * not moved to the GC heap.
+	 */
+	void authenticateV6(scope string username, scope string password)
+	{
+		import std.conv : to;
+		import std.exception : enforce;
+		import std.format : format;
+
+		conn.send("*3\r\n$4\r\nAUTH\r\n$");
+		conn.send(username.length.to!string);
+		conn.send("\r\n");
+		conn.send(username);
+		conn.send("\r\n$");
+		// We probably don't need to treat the *length* as particularly sensitive.
+		// If leaking this causes a problem for you, your password is too short.
+		conn.send(password.length.to!string);
+		conn.send("\r\n");
+		conn.send(password);
+		conn.send("\r\n");
+
+		Response[] r = conn.receiveResponses(1);
+
+		enforce!RedisException(r[0].value == "OK", format!"Redis login failed: %s"(r[0].value));
+	}
+
+	/**
 	 * Send a series of commands as a pipeline
 	 *
 	 * Examples:
