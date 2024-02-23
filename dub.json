@@ -5,6 +5,12 @@
     "homepage": "http://adilbaig.github.com/Tiny-Redis/",
     "license": "ISC",
     "targetPath": "bin/",
+    "dependencies": {
+        "openssl": {
+            "version": "*",
+            "optional": true
+        }
+    },
     "configurations": [
         {
             "name": "library",

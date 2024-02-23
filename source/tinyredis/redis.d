@@ -21,9 +21,7 @@ class RedisException : Exception {
 
 class Redis
 {
-	import std.socket : TcpSocket, InternetAddress;
-
-	protected TcpSocket conn;
+	protected Transport conn;
 
 	void close() nothrow @nogc {
 		conn.close();
@@ -34,7 +32,22 @@ class Redis
 	 */
 	this(string host = "127.0.0.1", ushort port = 6379)
 	{
-		conn = new TcpSocket(new InternetAddress(host, port));
+        import std.socket : InternetAddress;
+
+		conn = new TcpTransport(new InternetAddress(host, port));
+	}
+
+	version (Have_openssl)
+	{
+		/**
+		 * Create a new TLS-encrypted connection to the Redis server.
+		 * If `caData` is null, the default certificate store is used.
+		 */
+		this(const(ubyte)[] certificateData, const(ubyte)[] privateKeyData, const(ubyte)[] caData,
+			string host = "127.0.0.1", ushort port = 6379)
+		{
+			conn = new TlsTransport(host, port, certificateData, privateKeyData, caData);
+		}
 	}
 
 	/**
