@@ -21,9 +21,7 @@ class RedisException : Exception {
 
 class Redis
 {
-	import std.socket : TcpSocket, InternetAddress;
-
-	protected TcpSocket conn;
+	protected Transport conn;
 
 	void close() nothrow @nogc {
 		conn.close();
@@ -34,7 +32,22 @@ class Redis
 	 */
 	this(string host = "127.0.0.1", ushort port = 6379)
 	{
-		conn = new TcpSocket(new InternetAddress(host, port));
+        import std.socket : InternetAddress;
+
+		conn = new TcpTransport(new InternetAddress(host, port));
+	}
+
+	version (Have_openssl)
+	{
+		/**
+		 * Create a new TLS-encrypted connection to the Redis server.
+		 * If `caData` is null, the default certificate store is used.
+		 */
+		this(const(ubyte)[] certificateData, const(ubyte)[] privateKeyData, const(ubyte)[] caData,
+			string host = "127.0.0.1", ushort port = 6379)
+		{
+			conn = new TlsTransport(host, port, certificateData, privateKeyData, caData);
+		}
 	}
 
 	/**
@@ -80,6 +93,34 @@ class Redis
 		conn.send(cmd);
 		Response[] r = conn.receiveResponses(1);
 		return cast(R)r[0];
+	}
+
+	/**
+	 * Send an AUTH v6 (ACL) message.
+	 * The library guarantees that the parameters are not logged and
+	 * not moved to the GC heap.
+	 */
+	void authenticateV6(scope string username, scope string password)
+	{
+		import std.conv : to;
+		import std.exception : enforce;
+		import std.format : format;
+
+		conn.send("*3\r\n$4\r\nAUTH\r\n$");
+		conn.send(username.length.to!string);
+		conn.send("\r\n");
+		conn.send(username);
+		conn.send("\r\n$");
+		// We probably don't need to treat the *length* as particularly sensitive.
+		// If leaking this causes a problem for you, your password is too short.
+		conn.send(password.length.to!string);
+		conn.send("\r\n");
+		conn.send(password);
+		conn.send("\r\n");
+
+		Response[] r = conn.receiveResponses(1);
+
+		enforce!RedisException(r[0].value == "OK", format!"Redis login failed: %s"(r[0].value));
 	}
 
 	/**
