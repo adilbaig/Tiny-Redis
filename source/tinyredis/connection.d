@@ -109,12 +109,6 @@ version (Have_openssl)
 
 		private BIO* bio;
 
-		private X509* certificate;
-
-		private X509* redisCertificateAuthority;
-
-		private EVP_PKEY* privateKey;
-
 		public this(string host, ushort port, const(ubyte)[] certificateData, const(ubyte)[] privateKeyData,
 			const(ubyte)[] caData)
 		{
@@ -128,33 +122,35 @@ version (Have_openssl)
 			// Create temporary bios for the cert and pk
 			auto certificateBio = BIO_new_mem_buf(cast(void*) certificateData.ptr, cast(int) certificateData.length);
 			assert(certificateBio !is null);
-			this.certificate = PEM_read_bio_X509(certificateBio, null, null, null);
+			auto certificate = PEM_read_bio_X509(certificateBio, null, null, null);
 			BIO_free(certificateBio);
+			SSL_CTX_use_certificate(this.sslContext, certificate).checkOpensslError!"could not set certificate";
+			X509_free(certificate);
 
 			auto privateKeyBio = BIO_new_mem_buf(cast(void*) privateKeyData.ptr, cast(int) privateKeyData.length);
 			assert(privateKeyBio !is null);
-			this.privateKey = PEM_read_bio_PrivateKey(privateKeyBio, null, null, null);
+			auto privateKey = PEM_read_bio_PrivateKey(privateKeyBio, null, null, null);
 			BIO_free(privateKeyBio);
+			SSL_CTX_use_PrivateKey(this.sslContext, privateKey).checkOpensslError!"could not set private key";
+			EVP_PKEY_free(privateKey);
+
+			auto store = SSL_CTX_get_cert_store(this.sslContext);
 
 			if (!caData.empty)
 			{
 				auto caBIO = BIO_new_mem_buf(cast(void*) caData.ptr, cast(int) caData.length);
 				assert(caBIO !is null);
-				this.redisCertificateAuthority = PEM_read_bio_X509(caBIO, null, null, null);
+				auto redisCertificateAuthority = PEM_read_bio_X509(caBIO, null, null, null);
 				BIO_free(caBIO);
+				X509_STORE_add_cert(store, redisCertificateAuthority)
+					.checkOpensslError!"could not add Redis CA cert";
+				X509_free(redisCertificateAuthority);
 			}
 			else
 			{
-				this.redisCertificateAuthority = null;
 				SSL_CTX_set_default_verify_paths(this.sslContext)
 					.checkOpensslError!"could not set default certificate store";
 			}
-
-			auto store = SSL_CTX_get_cert_store(this.sslContext);
-
-			SSL_CTX_use_certificate(this.sslContext, this.certificate).checkOpensslError!"could not set certificate";
-			SSL_CTX_use_PrivateKey(this.sslContext, this.privateKey).checkOpensslError!"could not set private key";
-			X509_STORE_add_cert(store, this.redisCertificateAuthority).checkOpensslError!"could not add Redis CA cert";
 
 			this.bio = BIO_new_ssl_connect(this.sslContext);
 
@@ -199,12 +195,6 @@ version (Have_openssl)
 			scope close = cast(void delegate() @nogc nothrow) {
 				BIO_ssl_shutdown(this.bio);
 				BIO_free_all(this.bio);
-				X509_free(this.certificate);
-				if (redisCertificateAuthority !is null)
-				{
-					X509_free(this.redisCertificateAuthority);
-				}
-				EVP_PKEY_free(this.privateKey);
 			};
 			close();
 		}
