@@ -6,14 +6,14 @@
  */
 module tinyredis.subscriber;
 
-import tinyredis.response : Response;
+import tinyredis.connection;
 import tinyredis.encoder : toMultiBulk;
-import tinyredis.connection : receiveResponses;
-import std.socket : TcpSocket, InternetAddress, SocketShutdown;
+import tinyredis.response : Response;
 import std.stdio : stderr, writefln;
 import std.array : empty, front, popFront;
 import std.algorithm : find, any, min;
 import std.conv : to;
+import std.socket : InternetAddress;
 
 // Regular subscription callback
 alias Callback = void delegate(string channel, string message),
@@ -32,7 +32,7 @@ bool isType(string type)(Response r)
 class Subscriber
 {
 private:
-	TcpSocket conn;
+	Transport conn;
 	Callback[string] callbacks;      // Regular subscription callbacks
 	PCallback[string] pCallbacks;    // Pattern subscription callbacks
 	Response[][] queue;              // Responses collected but not yet processed
@@ -170,14 +170,14 @@ public:
 	 */
 	this(string host = "127.0.0.1", ushort port = 6379)
 	{
-		conn = new TcpSocket(new InternetAddress(host, port));
+		conn = new TcpTransport(new InternetAddress(host, port));
 		conn.blocking = false;
 	}
 
 	/**
 	 * Create a new subscriber using an existing socket
 	 */
-	this(TcpSocket conn) { this.conn = conn; }
+	this(Transport conn) { this.conn = conn; }
 
 	/**
 	 * Subscribe to a channel
